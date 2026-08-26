@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Taksi Gelir Gider Takip - Detaylı</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- html2pdf for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        body { background-color: #f8f9fa; padding-bottom: 90px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar-brand { font-weight: bold; color: #ffc107 !important; }
+        .bg-dark-custom { background-color: #212529; }
+        
+        /* Bottom Navigation */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #fff; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); z-index: 1000; display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { flex: 1; text-align: center; padding: 12px 0; color: #6c757d; cursor: pointer; transition: 0.3s; font-size: 0.8rem; }
+        .nav-item i { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: #ffc107; font-weight: bold; border-top: 3px solid #ffc107; background: #fffdf5; }
+        
+        /* Sections */
+        .section { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Cards & UI Elements */
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { background: transparent; border-bottom: 1px solid #f0f0f0; font-weight: 600; }
+        
+        .stat-card { border-radius: 12px; padding: 15px; color: #fff; position: relative; overflow: hidden; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+        .stat-card i { position: absolute; right: -10px; bottom: -15px; font-size: 5rem; opacity: 0.15; }
+        .bg-income { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .bg-expense { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); }
+        .bg-net { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .bg-unpaid { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); }
+        .bg-currency { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        
+        .form-label { font-weight: 600; font-size: 0.85rem; color: #495057; }
+        .input-group-text { background-color: #f1f3f5; font-weight: bold; border: none; }
+        .form-control { border: 1px solid #ced4da; }
+        .form-control:focus { box-shadow: none; border-color: #ffc107; }
+        
+        .table-responsive { background: #fff; border-radius: 12px; padding: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow-x: auto; }
+        .table { margin-bottom: 0; font-size: 0.85rem; }
+        .table thead th { background-color: #f8f9fa; color: #495057; font-weight: 600; white-space: nowrap; }
+        .table tfoot th { background-color: #e9ecef; color: #212529; font-weight: bold; white-space: nowrap; }
+        .table td { vertical-align: middle; white-space: nowrap; }
+        
+        .badge-unpaid { background-color: #dc3545; color: white; padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: normal;}
+        .badge-paid { background-color: #198754; color: white; padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: normal;}
+        
+        .action-btn { width: 100%; border-radius: 8px; padding: 12px; font-weight: bold; margin-bottom: 10px; }
+        .delete-btn { color: #dc3545; cursor: pointer; padding: 5px; }
+        .delete-btn:hover { background: #ffe6e6; border-radius: 4px; }
+        
+        .date-filter-group { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <nav class="navbar navbar-dark bg-dark-custom shadow-sm sticky-top">
+        <div class="container-fluid justify-content-center">
+            <span class="navbar-brand mb-0 h5"><i class="fas fa-taxi me-2"></i>Taksi Kasa Takip</span>
+        </div>
+    </nav>
+
+    <!-- SECTION: DASHBOARD / ÖZET -->
+    <div id="dashboard" class="section active">
+        <div class="date-filter-group mb-3 d-flex flex-column gap-2">
+            <label class="form-label mb-0 text-muted">Özet Gösterim Aralığı</label>
+            <div class="d-flex gap-2">
+                <input type="date" id="dashStartDate" class="form-control form-control-sm" onchange="loadDashboard()">
+                <span class="align-self-center">-</span>
+                <input type="date" id="dashEndDate" class="form-control form-control-sm" onchange="loadDashboard()">
+            </div>
+        </div>
+
+        <div class="row g-2">
+            <div class="col-6">
+                <div class="stat-card bg-income">
+                    <h6 class="mb-1 small">Toplam Gelir (₺)</h6>
+                    <h4 id="dashTotalIncome" class="mb-0">₺0</h4>
+                    <i class="fas fa-wallet"></i>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-card bg-expense">
+                    <h6 class="mb-1 small">Toplam Gider (₺)</h6>
+                    <h4 id="dashTotalExpense" class="mb-0">₺0</h4>
+                    <i class="fas fa-receipt"></i>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="stat-card bg-net">
+                    <h6 class="mb-1">Net Kalan (₺ Kâr)</h6>
+                    <h3 id="dashNet" class="mb-0 fw-bold">₺0</h3>
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+            
+            <!-- Döviz Özetleri -->
+            <div class="col-6">
+                <div class="stat-card bg-currency">
+                    <h6 class="mb-1 small">Toplam Dolar</h6>
+                    <h4 id="dashUSD" class="mb-0">$0</h4>
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-card bg-currency">
+                    <h6 class="mb-1 small">Toplam Euro</h6>
+                    <h4 id="dashEUR" class="mb-0">€0</h4>
+                    <i class="fas fa-euro-sign"></i>
+                </div>
+            </div>
+            
+            <div class="col-12">
+                <div class="stat-card bg-unpaid">
+                    <h6 class="mb-1 text-dark">Ödenmemiş Gider Borcu</h6>
+                    <h4 id="dashUnpaid" class="mb-0 text-dark">₺0</h4>
+                    <i class="fas fa-exclamation-triangle text-dark"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION: GELİR EKLE -->
+    <div id="addIncome" class="section">
+        <div class="card">
+            <div class="card-header text-primary"><i class="fas fa-plus-circle me-2"></i>Günlük Gelir Ekle</div>
+            <div class="card-body">
+                <div class="alert alert-info py-2 small"><i class="fas fa-info-circle me-1"></i>Aynı güne tekrar gelir girerseniz, eski kaydın üzerine toplanarak (birleştirilerek) eklenir.</div>
+                <form id="incomeForm">
+                    <div class="mb-3">
+                        <label class="form-label">Tarih</label>
+                        <input type="date" id="incDate" class="form-control" required>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Nakit (₺)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₺</span>
+                                <input type="number" id="incCash" class="form-control" value="0" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Kredi Kartı (₺)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-credit-card"></i></span>
+                                <input type="number" id="incCC" class="form-control" value="0" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Dolar ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" id="incUSD" class="form-control" value="0" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Euro (€)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">€</span>
+                                <input type="number" id="incEUR" class="form-control" value="0" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">HGS Geliri (₺)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₺</span>
+                                <input type="number" id="incHGS" class="form-control" value="0" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary action-btn" onclick="saveIncome()"><i class="fas fa-save me-2"></i>Geliri Kaydet / Güncelle</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION: GİDER EKLE -->
+    <div id="addExpense" class="section">
+        <div class="card">
+            <div class="card-header text-danger"><i class="fas fa-minus-circle me-2"></i>Gider Ekle</div>
+            <div class="card-body">
+                <form id="expenseForm">
+                    <div class="mb-3">
+                        <label class="form-label">Tarih</label>
+                        <input type="date" id="expDate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gider Türü / Açıklama</label>
+                        <input type="text" id="expDesc" class="form-control" placeholder="Örn: Yağ bakımı, Kaporta, HGS, Araba Kirası..." required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tutar (₺)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₺</span>
+                            <input type="number" id="expAmount" class="form-control" required min="0.01" step="0.01">
+                        </div>
+                    </div>
+                    <div class="mb-4 form-check form-switch p-3 bg-light rounded border">
+                        <input class="form-check-input ms-0 me-2" type="checkbox" id="expUnpaid" style="width: 2.5em; height: 1.25em;">
+                        <label class="form-check-label text-danger fw-bold ms-2" for="expUnpaid" style="padding-top: 2px;">Bu Gider Ödenmedi (Borç)</label>
+                    </div>
+                    <button type="button" class="btn btn-danger action-btn" onclick="saveExpense()"><i class="fas fa-save me-2"></i>Gideri Kaydet</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION: RAPORLAR -->
+    <div id="reports" class="section">
+        
+        <div class="date-filter-group mb-3 d-flex flex-column gap-2">
+            <label class="form-label mb-0 text-primary fw-bold"><i class="fas fa-filter me-2"></i>Rapor Tarih Aralığı</label>
+            <div class="d-flex gap-2">
+                <input type="date" id="repStartDate" class="form-control form-control-sm" onchange="generateReport()">
+                <span class="align-self-center">-</span>
+                <input type="date" id="repEndDate" class="form-control form-control-sm" onchange="generateReport()">
+            </div>
+        </div>
+
+        <div class="card" id="reportContainer">
+            <div class="card-body p-2 p-md-3">
+                <ul class="nav nav-pills mb-3 nav-fill gap-1" id="pills-tab" role="tablist">
+                    <li class="nav-item m-0" role="presentation">
+                        <button class="nav-link active py-2 small" data-bs-toggle="pill" data-bs-target="#pills-income" type="button">Gelirler</button>
+                    </li>
+                    <li class="nav-item m-0" role="presentation">
+                        <button class="nav-link py-2 small" data-bs-toggle="pill" data-bs-target="#pills-expense" type="button">Giderler</button>
+                    </li>
+                    <li class="nav-item m-0" role="presentation">
+                        <button class="nav-link py-2 small" data-bs-toggle="pill" data-bs-target="#pills-summary" type="button" onclick="generateMonthlySummary()">Aylık Özet</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="pills-tabContent">
+                    <!-- Income Table -->
+                    <div class="tab-pane fade show active" id="pills-income">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tarih</th>
+                                        <th class="text-end">Nakit(₺)</th>
+                                        <th class="text-end">K.Kartı(₺)</th>
+                                        <th class="text-end">HGS(₺)</th>
+                                        <th class="text-end">Dolar($)</th>
+                                        <th class="text-end">Euro(€)</th>
+                                        <th class="text-center">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportIncomeTable"></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th>TOPLAM</th>
+                                        <th class="text-end" id="totIncCash">₺0</th>
+                                        <th class="text-end" id="totIncCC">₺0</th>
+                                        <th class="text-end" id="totIncHGS">₺0</th>
+                                        <th class="text-end" id="totIncUSD">$0</th>
+                                        <th class="text-end" id="totIncEUR">€0</th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Expense Table -->
+                    <div class="tab-pane fade" id="pills-expense">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tarih</th>
+                                        <th>Gider Türü</th>
+                                        <th class="text-end">Tutar(₺)</th>
+                                        <th class="text-center">Durum</th>
+                                        <th class="text-center">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportExpenseTable"></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2">GENEL TOPLAM GİDER</th>
+                                        <th class="text-end text-danger" id="totExpAmount">₺0</th>
+                                        <th colspan="2"></th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2">ÖDENMEMİŞ (BORÇ)</th>
+                                        <th class="text-end text-warning" id="totExpUnpaid">₺0</th>
+                                        <th colspan="2"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Summary Table -->
+                    <div class="tab-pane fade" id="pills-summary">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ay / Yıl</th>
+                                        <th class="text-end text-success">Gelir(₺)</th>
+                                        <th class="text-end text-danger">Gider(₺)</th>
+                                        <th class="text-end text-primary">Net Kâr(₺)</th>
+                                        <th class="text-end">Dolar($)</th>
+                                        <th class="text-end">Euro(€)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportSummaryTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="row mt-3 g-2">
+            <div class="col-6">
+                <button class="btn btn-success action-btn mb-0" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i>Excel Çıktısı</button>
+            </div>
+            <div class="col-6">
+                <button class="btn btn-danger action-btn mb-0" onclick="exportToPDF()"><i class="fas fa-file-pdf me-2"></i>PDF Çıktısı</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION: AYARLAR / YEDEKLEME -->
+    <div id="settings" class="section">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-cog me-2"></i>Veri Yönetimi & Yedekleme</div>
+            <div class="card-body">
+                <p class="text-muted small">Verileriniz çevrimdışı olarak sadece bu cihazın tarayıcısına kaydedilir. Başka bir cihaza aktarmak veya güvende tutmak için ara sıra "Dışa Aktar" yapınız.</p>
+                
+                <button class="btn btn-primary action-btn mb-3" onclick="exportData()"><i class="fas fa-download me-2"></i>Verileri Dışa Aktar (JSON)</button>
+                
+                <hr>
+                <label class="form-label fw-bold">Başka Cihazdan Veri Yükle</label>
+                <input type="file" id="importFile" class="form-control mb-2" accept=".json">
+                <button class="btn btn-secondary action-btn mb-4" onclick="importData()"><i class="fas fa-upload me-2"></i>Verileri İçe Aktar</button>
+                
+                <hr>
+                <button class="btn btn-outline-danger action-btn mt-2" onclick="clearAllData()"><i class="fas fa-trash me-2"></i>Tüm Verileri Kalıcı Olarak Sil</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('dashboard')">
+            <i class="fas fa-home"></i> Özet
+        </div>
+        <div class="nav-item" onclick="switchTab('addIncome')">
+            <i class="fas fa-plus"></i> Gelir
+        </div>
+        <div class="nav-item" onclick="switchTab('addExpense')">
+            <i class="fas fa-minus"></i> Gider
+        </div>
+        <div class="nav-item" onclick="switchTab('reports')">
+            <i class="fas fa-list-alt"></i> Rapor
+        </div>
+        <div class="nav-item" onclick="switchTab('settings')">
+            <i class="fas fa-cog"></i> Ayar
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Main Logic -->
+    <script>
+        // Initialize Data
+        let db = {
+            incomes: [],
+            expenses: []
+        };
+
+        // Format Currency
+        const fmtTL = (num) => '₺' + parseFloat(num).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
+        const fmtUSD = (num) => '$' + parseFloat(num).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
+        const fmtEUR = (num) => '€' + parseFloat(num).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+        // On Load
+        window.onload = () => {
+            const stored = localStorage.getItem('taksiDB_pro');
+            if (stored) { db = JSON.parse(stored); }
+            
+            // Set default dates
+            const todayDate = new Date();
+            const todayStr = todayDate.toISOString().split('T')[0];
+            
+            // First day of current month
+            const firstDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1).toISOString().split('T')[0];
+            
+            document.getElementById('incDate').value = todayStr;
+            document.getElementById('expDate').value = todayStr;
+            
+            document.getElementById('dashStartDate').value = firstDay;
+            document.getElementById('dashEndDate').value = todayStr;
+            
+            document.getElementById('repStartDate').value = firstDay;
+            document.getElementById('repEndDate').value = todayStr;
+            
+            loadDashboard();
+        };
+
+        function saveDataToLocal() {
+            localStorage.setItem('taksiDB_pro', JSON.stringify(db));
+            loadDashboard();
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if(tabId === 'dashboard') loadDashboard();
+            if(tabId === 'reports') generateReport();
+        }
+
+        // --- INCOME LOGIC (Aggregated by Date) ---
+        function saveIncome() {
+            const date = document.getElementById('incDate').value;
+            if(!date) return alert("Lütfen tarih seçin!");
+
+            const c_cash = parseFloat(document.getElementById('incCash').value) || 0;
+            const c_cc   = parseFloat(document.getElementById('incCC').value) || 0;
+            const c_usd  = parseFloat(document.getElementById('incUSD').value) || 0;
+            const c_eur  = parseFloat(document.getElementById('incEUR').value) || 0;
+            const c_hgs  = parseFloat(document.getElementById('incHGS').value) || 0;
+
+            if(c_cash === 0 && c_cc === 0 && c_usd === 0 && c_eur === 0 && c_hgs === 0) {
+                return alert("Lütfen en az bir gelir türüne tutar girin.");
+            }
+
+            // Check if date exists
+            let existingInc = db.incomes.find(i => i.date === date);
+            
+            if(existingInc) {
+                // Aggregate (Add to existing)
+                existingInc.cash += c_cash;
+                existingInc.cc += c_cc;
+                existingInc.usd += c_usd;
+                existingInc.eur += c_eur;
+                existingInc.hgs += c_hgs;
+                alert(`Mevcut güne ait gelirler toplandı!
+
+Yeni Toplam Nakit: ${existingInc.cash}₺`);
+            } else {
+                // Create New
+                db.incomes.push({
+                    id: Date.now(),
+                    date: date,
+                    cash: c_cash,
+                    cc: c_cc,
+                    usd: c_usd,
+                    eur: c_eur,
+                    hgs: c_hgs
+                });
+                alert("Gelir başarıyla eklendi!");
+            }
+            
+            saveDataToLocal();
+            
+            // Reset form but keep date
+            document.getElementById('incCash').value = 0;
+            document.getElementById('incCC').value = 0;
+            document.getElementById('incUSD').value = 0;
+            document.getElementById('incEUR').value = 0;
+            document.getElementById('incHGS').value = 0;
+        }
+
+        // --- EXPENSE LOGIC (Kept as individual items due to descriptions) ---
+        function saveExpense() {
+            const date = document.getElementById('expDate').value;
+            const desc = document.getElementById('expDesc').value.trim();
+            const amount = parseFloat(document.getElementById('expAmount').value) || 0;
+            const isUnpaid = document.getElementById('expUnpaid').checked;
+
+            if(!date || !desc || amount <= 0) return alert("Lütfen tarih, açıklama ve geçerli bir tutar girin!");
+
+            db.expenses.push({
+                id: Date.now(),
+                date: date,
+                desc: desc,
+                amount: amount,
+                isUnpaid: isUnpaid
+            });
+            
+            saveDataToLocal();
+            
+            document.getElementById('expenseForm').reset();
+            document.getElementById('expDate').value = date;
+            alert("Gider başarıyla kaydedildi!");
+        }
+
+        function deleteRecord(type, id) {
+            if(!confirm("Bu kaydı tamamen silmek istediğinize emin misiniz?")) return;
+            if(type === 'income') {
+                db.incomes = db.incomes.filter(i => i.id !== id);
+            } else {
+                db.expenses = db.expenses.filter(e => e.id !== id);
+            }
+            saveDataToLocal();
+            generateReport();
+        }
+
+        function togglePaid(id) {
+            const exp = db.expenses.find(e => e.id === id);
+            if(exp) {
+                exp.isUnpaid = !exp.isUnpaid;
+                saveDataToLocal();
+                generateReport();
+            }
+        }
+
+        // --- DASHBOARD LOGIC (Date Range Filtered) ---
+        function loadDashboard() {
+            const sDate = document.getElementById('dashStartDate').value || "1900-01-01";
+            const eDate = document.getElementById('dashEndDate').value || "2999-12-31";
+            
+            let tInc = 0, tExp = 0, tUnpaid = 0, tUSD = 0, tEUR = 0;
+
+            db.incomes.filter(i => i.date >= sDate && i.date <= eDate).forEach(i => {
+                tInc += (i.cash + i.cc + i.hgs); // TL Toplamı
+                tUSD += i.usd;
+                tEUR += i.eur;
+            });
+
+            db.expenses.filter(e => e.date >= sDate && e.date <= eDate).forEach(e => {
+                tExp += e.amount;
+                if(e.isUnpaid) tUnpaid += e.amount;
+            });
+
+            document.getElementById('dashTotalIncome').innerText = fmtTL(tInc);
+            document.getElementById('dashTotalExpense').innerText = fmtTL(tExp);
+            document.getElementById('dashNet').innerText = fmtTL(tInc - tExp);
+            document.getElementById('dashUSD').innerText = fmtUSD(tUSD);
+            document.getElementById('dashEUR').innerText = fmtEUR(tEUR);
+            document.getElementById('dashUnpaid').innerText = fmtTL(tUnpaid);
+        }
+
+        // --- REPORTS LOGIC (Date Range Filtered & Detailed) ---
+        function generateReport() {
+            const sDate = document.getElementById('repStartDate').value || "1900-01-01";
+            const eDate = document.getElementById('repEndDate').value || "2999-12-31";
+            
+            // --- INCOME TABLE ---
+            const tbodyInc = document.getElementById('reportIncomeTable');
+            tbodyInc.innerHTML = '';
+            
+            let sums = { cash:0, cc:0, hgs:0, usd:0, eur:0 };
+            
+            const filteredIncomes = db.incomes.filter(i => i.date >= sDate && i.date <= eDate).sort((a,b) => a.date.localeCompare(b.date));
+            filteredIncomes.forEach(i => {
+                sums.cash += i.cash; sums.cc += i.cc; sums.hgs += i.hgs; sums.usd += i.usd; sums.eur += i.eur;
+                tbodyInc.innerHTML += `
+                    <tr>
+                        <td>${formatDate(i.date)}</td>
+                        <td class="text-end">${fmtTL(i.cash)}</td>
+                        <td class="text-end">${fmtTL(i.cc)}</td>
+                        <td class="text-end">${fmtTL(i.hgs)}</td>
+                        <td class="text-end text-primary">${i.usd > 0 ? fmtUSD(i.usd) : '-'}</td>
+                        <td class="text-end text-primary">${i.eur > 0 ? fmtEUR(i.eur) : '-'}</td>
+                        <td class="text-center"><i class="fas fa-trash delete-btn" onclick="deleteRecord('income', ${i.id})"></i></td>
+                    </tr>
+                `;
+            });
+            if(filteredIncomes.length === 0) tbodyInc.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Bu aralıkta kayıt yok.</td></tr>';
+
+            // Update Income Footer
+            document.getElementById('totIncCash').innerText = fmtTL(sums.cash);
+            document.getElementById('totIncCC').innerText = fmtTL(sums.cc);
+            document.getElementById('totIncHGS').innerText = fmtTL(sums.hgs);
+            document.getElementById('totIncUSD').innerText = fmtUSD(sums.usd);
+            document.getElementById('totIncEUR').innerText = fmtEUR(sums.eur);
+
+            // --- EXPENSE TABLE ---
+            const tbodyExp = document.getElementById('reportExpenseTable');
+            tbodyExp.innerHTML = '';
+            
+            let sumExp = 0, sumUnpaid = 0;
+            
+            const filteredExpenses = db.expenses.filter(e => e.date >= sDate && e.date <= eDate).sort((a,b) => a.date.localeCompare(b.date));
+            filteredExpenses.forEach(e => {
+                sumExp += e.amount;
+                if(e.isUnpaid) sumUnpaid += e.amount;
+                
+                let statusBadge = e.isUnpaid ? `<span class="badge-unpaid" onclick="togglePaid(${e.id})" style="cursor:pointer">Ödenmedi</span>` 
+                                             : `<span class="badge-paid" onclick="togglePaid(${e.id})" style="cursor:pointer">Ödendi</span>`;
+                tbodyExp.innerHTML += `
+                    <tr>
+                        <td>${formatDate(e.date)}</td>
+                        <td>${e.desc}</td>
+                        <td class="text-end">${fmtTL(e.amount)}</td>
+                        <td class="text-center">${statusBadge}</td>
+                        <td class="text-center"><i class="fas fa-trash delete-btn" onclick="deleteRecord('expense', ${e.id})"></i></td>
+                    </tr>
+                `;
+            });
+            if(filteredExpenses.length === 0) tbodyExp.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Bu aralıkta kayıt yok.</td></tr>';
+
+            // Update Expense Footer
+            document.getElementById('totExpAmount').innerText = fmtTL(sumExp);
+            document.getElementById('totExpUnpaid').innerText = fmtTL(sumUnpaid);
+            
+            // Also refresh monthly summary if that tab is active
+            generateMonthlySummary();
+        }
+
+        // Generate Monthly/Yearly Summary
+        function generateMonthlySummary() {
+            const tbody = document.getElementById('reportSummaryTable');
+            tbody.innerHTML = '';
+            
+            // Group data by YYYY-MM
+            let monthlyData = {};
+            
+            db.incomes.forEach(i => {
+                let m = i.date.substring(0,7); // YYYY-MM
+                if(!monthlyData[m]) monthlyData[m] = { inc:0, exp:0, usd:0, eur:0 };
+                monthlyData[m].inc += (i.cash + i.cc + i.hgs);
+                monthlyData[m].usd += i.usd;
+                monthlyData[m].eur += i.eur;
+            });
+            
+            db.expenses.forEach(e => {
+                let m = e.date.substring(0,7);
+                if(!monthlyData[m]) monthlyData[m] = { inc:0, exp:0, usd:0, eur:0 };
+                monthlyData[m].exp += e.amount;
+            });
+            
+            // Sort months descending
+            let months = Object.keys(monthlyData).sort().reverse();
+            
+            months.forEach(m => {
+                let d = monthlyData[m];
+                let net = d.inc - d.exp;
+                let mFormat = m.split('-')[1] + " / " + m.split('-')[0]; // MM / YYYY
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold">${mFormat}</td>
+                        <td class="text-end text-success">${fmtTL(d.inc)}</td>
+                        <td class="text-end text-danger">${fmtTL(d.exp)}</td>
+                        <td class="text-end fw-bold ${net>=0?'text-primary':'text-danger'}">${fmtTL(net)}</td>
+                        <td class="text-end">${fmtUSD(d.usd)}</td>
+                        <td class="text-end">${fmtEUR(d.eur)}</td>
+                    </tr>
+                `;
+            });
+            
+            if(months.length === 0) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Henüz veri yok.</td></tr>';
+        }
+
+        function formatDate(dateString) {
+            const [y, m, d] = dateString.split('-');
+            return `${d}.${m}.${y}`;
+        }
+
+        // --- EXPORT / IMPORT ---
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "taksi_kasa_pro_yedek_" + new Date().toISOString().split('T')[0] + ".json");
+            dlAnchorElem.click();
+        }
+
+        function importData() {
+            const fileInput = document.getElementById('importFile');
+            if(fileInput.files.length === 0) return alert("Lütfen bir JSON dosyası seçin.");
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedDb = JSON.parse(event.target.result);
+                    if(importedDb.incomes && importedDb.expenses) {
+                        db = importedDb;
+                        saveDataToLocal();
+                        alert("Veriler başarıyla yüklendi!");
+                        fileInput.value = '';
+                    } else {
+                        alert("Geçersiz dosya formatı!");
+                    }
+                } catch(e) {
+                    alert("Dosya okunurken hata oluştu!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            const code = Math.floor(1000 + Math.random() * 9000);
+            const input = prompt(`DİKKAT: Tüm verileri kalıcı olarak silmek üzeresiniz. Onaylamak için şu kodu girin: ${code}`);
+            if(input == code) {
+                db = { incomes: [], expenses: [] };
+                saveDataToLocal();
+                alert("Tüm veriler silindi.");
+            } else if (input !== null) {
+                alert("Hatalı kod, işlem iptal edildi.");
+            }
+        }
+
+        // --- EXPORT TO EXCEL ---
+        function exportToExcel() {
+            const sDate = document.getElementById('repStartDate').value || "Tümü";
+            const eDate = document.getElementById('repEndDate').value || "Tümü";
+            
+            // Generate Data Arrays
+            const filteredIncomes = db.incomes.filter(i => (sDate==="Tümü"||i.date>=sDate) && (eDate==="Tümü"||i.date<=eDate)).sort((a,b) => a.date.localeCompare(b.date));
+            const incData = filteredIncomes.map(i => ({
+                'Tarih': formatDate(i.date),
+                'Nakit (₺)': i.cash,
+                'Kredi Kartı (₺)': i.cc,
+                'HGS (₺)': i.hgs,
+                'Dolar ($)': i.usd,
+                'Euro (€)': i.eur,
+                'Günlük Toplam (₺)': (i.cash + i.cc + i.hgs)
+            }));
+            
+            const filteredExpenses = db.expenses.filter(e => (sDate==="Tümü"||e.date>=sDate) && (eDate==="Tümü"||e.date<=eDate)).sort((a,b) => a.date.localeCompare(b.date));
+            const expData = filteredExpenses.map(e => ({
+                'Tarih': formatDate(e.date),
+                'Gider Türü': e.desc,
+                'Tutar (₺)': e.amount,
+                'Durum': e.isUnpaid ? 'Ödenmedi (Borç)' : 'Ödendi'
+            }));
+
+            const wb = XLSX.utils.book_new();
+            
+            const wsInc = XLSX.utils.json_to_sheet(incData.length ? incData : [{Tarih: "Veri Yok"}]);
+            XLSX.utils.book_append_sheet(wb, wsInc, "Gelir Dökümü");
+            
+            const wsExp = XLSX.utils.json_to_sheet(expData.length ? expData : [{Tarih: "Veri Yok"}]);
+            XLSX.utils.book_append_sheet(wb, wsExp, "Gider Dökümü");
+            
+            XLSX.writeFile(wb, `Taksi_Rapor_${sDate}_${eDate}.xlsx`);
+        }
+
+        // --- EXPORT TO PDF ---
+        function exportToPDF() {
+            // Find active tab inside reportContainer to print
+            const element = document.getElementById('reportContainer');
+            const opt = {
+                margin:       5,
+                filename:     `Taksi_Rapor_${document.getElementById('repStartDate').value}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // Landscape for tables
+            };
+            
+            // Hide delete buttons before PDF generation so they don't look messy
+            document.querySelectorAll('.delete-btn').forEach(el => el.style.display = 'none');
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Restore delete buttons
+                document.querySelectorAll('.delete-btn').forEach(el => el.style.display = 'inline-block');
+            });
+        }
+
+    </script>
+</body>
+</html>
