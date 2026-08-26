@@ -1,4 +1,4 @@
-# 🚕 Taksi Kasa Takip Pro
+# 🚕 Taksi Kasa Takip
 
 Taksi şoförleri ve durak işletmecileri için tasarlanmış, tamamen tarayıcı üzerinde ve çevrimdışı (offline) çalışabilen, detaylı gelir-gider takip web uygulamasıdır.
 
