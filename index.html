@@ -341,13 +341,13 @@
         /* Action Buttons */
         .action-btn {
             border-radius: 10px;
-            padding: 12px;
+            padding: 10px 12px;
             font-weight: 700;
-            font-size: 0.92rem;
+            font-size: 0.88rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             border: none;
             transition: all 0.2s;
         }
@@ -447,45 +447,6 @@
         }
         .modal-footer {
             border-top: 1px solid var(--border-color);
-        }
-
-        /* Print / Professional PDF Container (Sabit A4 genişliği: 794px, tam merkezli ve offset hatasız) */
-        #pdfExportPreview {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 794px;
-            min-width: 794px;
-            max-width: 794px;
-            background: #ffffff !important;
-            color: #0f172a !important;
-            z-index: 999999;
-            box-sizing: border-box;
-            padding: 24px 28px;
-            display: none;
-            pointer-events: none;
-            box-shadow: none;
-        }
-
-        @media print {
-            body {
-                background: #ffffff !important;
-                color: #000000 !important;
-                padding-bottom: 0 !important;
-            }
-            .navbar-custom, .bottom-nav, #masterDateFilterContainer, .filter-presets, 
-            .action-btn, .export-card, .delete-btn, .edit-btn, .nav-pills {
-                display: none !important;
-            }
-            .section {
-                display: block !important;
-                padding: 0 !important;
-                max-width: 100% !important;
-            }
-            .card {
-                box-shadow: none !important;
-                border: 1px solid #ccc !important;
-            }
         }
     </style>
 </head>
@@ -821,18 +782,23 @@
             </div>
         </div>
 
-        <!-- Ortak Raporu İndirme Butonları -->
+        <!-- Ortak Raporu Çıktı Butonları -->
         <div class="export-card">
             <h6 class="fw-bold mb-2 small"><i class="fas fa-file-export me-1 text-primary"></i>Ortak Hesaplaşma Raporu Al</h6>
             <div class="row g-2">
-                <div class="col-6">
-                    <button class="btn btn-success action-btn w-100" onclick="exportPartnerExcel()">
-                        <i class="fas fa-file-excel"></i>Excel İndir
-                    </button>
-                </div>
-                <div class="col-6">
+                <div class="col-4">
                     <button class="btn btn-danger action-btn w-100" onclick="exportPartnerPDF()">
                         <i class="fas fa-file-pdf"></i>PDF İndir
+                    </button>
+                </div>
+                <div class="col-4">
+                    <button class="btn btn-outline-dark action-btn w-100" onclick="printPartnerReport()">
+                        <i class="fas fa-print"></i>Yazdır
+                    </button>
+                </div>
+                <div class="col-4">
+                    <button class="btn btn-success action-btn w-100" onclick="exportPartnerExcel()">
+                        <i class="fas fa-file-excel"></i>Excel
                     </button>
                 </div>
             </div>
@@ -967,18 +933,23 @@
             </div>
             
             <div class="row g-2">
-                <div class="col-6">
-                    <button class="btn btn-success action-btn w-100" onclick="exportActiveTabExcel()">
-                        <i class="fas fa-file-excel"></i>Excel Çıktısı
+                <div class="col-4">
+                    <button class="btn btn-danger action-btn w-100" onclick="exportActiveTabPDF()" title="PDF Dosyasını Doğrudan İndir">
+                        <i class="fas fa-file-pdf"></i>PDF İndir
                     </button>
                 </div>
-                <div class="col-6">
-                    <button class="btn btn-danger action-btn w-100" onclick="exportActiveTabPDF()">
-                        <i class="fas fa-file-pdf"></i>PDF Çıktısı
+                <div class="col-4">
+                    <button class="btn btn-outline-dark action-btn w-100" onclick="printActiveTab()" title="Yazdır veya PDF Olarak Önizle">
+                        <i class="fas fa-print"></i>Yazdır
+                    </button>
+                </div>
+                <div class="col-4">
+                    <button class="btn btn-success action-btn w-100" onclick="exportActiveTabExcel()" title="Excel Tablosu İndir">
+                        <i class="fas fa-file-excel"></i>Excel
                     </button>
                 </div>
                 <div class="col-12 mt-1">
-                    <button class="btn btn-outline-dark action-btn w-100 btn-sm" onclick="exportCompleteReportModal()">
+                    <button class="btn btn-outline-secondary action-btn w-100 btn-sm" onclick="exportCompleteReportModal()">
                         <i class="fas fa-layer-group me-1"></i>Tüm Raporları Birleşik İndir (Gelir + Gider + Ortaklar)
                     </button>
                 </div>
@@ -1138,9 +1109,6 @@
             </div>
         </div>
     </div>
-
-    <!-- GİZLİ YAZDIRMA VE TEMİZ PDF OLUŞTURMA ALANI (Tam A4 794px genişlikte renderlanır) -->
-    <div id="pdfExportPreview"></div>
 
     <!-- BOTTOM NAVIGATION -->
     <div class="bottom-nav">
@@ -1982,255 +1950,14 @@
             }
         }
 
-        // ==================== PROFESYONEL VE HEDEF ODAKLI ÇIKTI SİSTEMİ ====================
+        // ==================== RAPOR HTML ŞABLON ÜRETİCİLERİ ====================
 
-        // 1. EXCEL ÇIKTILARI (Aktif Sekmeye Göre)
-        function exportActiveTabExcel() {
-            if (currentReportTab === 'expense') {
-                exportExpenseOnlyExcel();
-            } else if (currentReportTab === 'income') {
-                exportIncomeOnlyExcel();
-            } else {
-                exportSummaryOnlyExcel();
-            }
-        }
-
-        // SADECE GİDER EXCEL RAPORU
-        function exportExpenseOnlyExcel() {
+        // 1. GİDER RAPORU HTML
+        function getExpenseReportHTML() {
             const { sDate, eDate } = getActiveDateRange();
             const filteredExpenses = (db.expenses || [])
                 .filter(e => e.date >= sDate && e.date <= eDate)
                 .sort((a,b) => a.date.localeCompare(b.date));
-
-            if (filteredExpenses.length === 0) {
-                return alert("Seçili tarih aralığında dışa aktarılacak gider kaydı yok!");
-            }
-
-            let sumExp = 0;
-            const expData = filteredExpenses.map(e => {
-                sumExp += e.amount;
-                return {
-                    'Tarih': formatDate(e.date),
-                    'Gider Türü / Açıklaması': e.desc,
-                    'Tutar (₺)': e.amount,
-                    'Ödeme Durumu': e.isUnpaid ? 'Ödenmedi (Borç)' : 'Ödendi'
-                };
-            });
-
-            // Toplam satırı ekle
-            expData.push({
-                'Tarih': 'GENEL TOPLAM',
-                'Gider Türü / Açıklaması': `${filteredExpenses.length} Kalem Gider`,
-                'Tutar (₺)': sumExp,
-                'Ödeme Durumu': ''
-            });
-
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(expData);
-            XLSX.utils.book_append_sheet(wb, ws, "Gider Raporu");
-            XLSX.writeFile(wb, `Taksi_Gider_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
-        }
-
-        // SADECE GELİR EXCEL RAPORU
-        function exportIncomeOnlyExcel() {
-            const { sDate, eDate } = getActiveDateRange();
-            const filteredIncomes = (db.incomes || [])
-                .filter(i => i.date >= sDate && i.date <= eDate)
-                .sort((a,b) => a.date.localeCompare(b.date));
-
-            if (filteredIncomes.length === 0) {
-                return alert("Seçili tarih aralığında dışa aktarılacak gelir kaydı yok!");
-            }
-
-            let totCash = 0, totCC = 0, totHGS = 0, totTotal = 0, totUSD = 0, totEUR = 0;
-            const incData = filteredIncomes.map(i => {
-                const dayTotal = (i.cash || 0) + (i.cc || 0) + (i.hgs || 0);
-                totCash += (i.cash || 0);
-                totCC += (i.cc || 0);
-                totHGS += (i.hgs || 0);
-                totTotal += dayTotal;
-                totUSD += (i.usd || 0);
-                totEUR += (i.eur || 0);
-
-                return {
-                    'Tarih': formatDate(i.date),
-                    'Nakit (₺)': i.cash || 0,
-                    'Kredi Kartı / POS (₺)': i.cc || 0,
-                    'HGS (₺)': i.hgs || 0,
-                    'Günlük Toplam (₺)': dayTotal,
-                    'Dolar ($)': i.usd || 0,
-                    'Euro (€)': i.eur || 0
-                };
-            });
-
-            // Toplam satırı
-            incData.push({
-                'Tarih': 'GENEL TOPLAM',
-                'Nakit (₺)': totCash,
-                'Kredi Kartı / POS (₺)': totCC,
-                'HGS (₺)': totHGS,
-                'Günlük Toplam (₺)': totTotal,
-                'Dolar ($)': totUSD,
-                'Euro (€)': totEUR
-            });
-
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(incData);
-            XLSX.utils.book_append_sheet(wb, ws, "Gelir Raporu");
-            XLSX.writeFile(wb, `Taksi_Gelir_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
-        }
-
-        // AYLIK ÖZET EXCEL
-        function exportSummaryOnlyExcel() {
-            let monthlyData = {};
-            (db.incomes || []).forEach(i => {
-                let m = i.date.substring(0,7);
-                if(!monthlyData[m]) monthlyData[m] = { inc:0, exp:0, usd:0, eur:0 };
-                monthlyData[m].inc += (i.cash + i.cc + i.hgs);
-                monthlyData[m].usd += (i.usd || 0);
-                monthlyData[m].eur += (i.eur || 0);
-            });
-            (db.expenses || []).forEach(e => {
-                let m = e.date.substring(0,7);
-                if(!monthlyData[m]) monthlyData[m] = { inc:0, exp:0, usd:0, eur:0 };
-                monthlyData[m].exp += e.amount;
-            });
-            let months = Object.keys(monthlyData).sort().reverse();
-            if (months.length === 0) return alert("Dışa aktarılacak özet veri yok!");
-
-            const summaryData = months.map(m => {
-                let d = monthlyData[m];
-                return {
-                    'Ay / Yıl': m.split('-')[1] + " / " + m.split('-')[0],
-                    'Toplam Gelir (₺)': d.inc,
-                    'Toplam Gider (₺)': d.exp,
-                    'Net Kâr (₺)': d.inc - d.exp,
-                    'Dolar ($)': d.usd,
-                    'Euro (€)': d.eur
-                };
-            });
-
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(summaryData);
-            XLSX.utils.book_append_sheet(wb, ws, "Aylık Özet");
-            XLSX.writeFile(wb, `Taksi_Aylik_Ozet_${toISO(new Date())}.xlsx`);
-        }
-
-        // ORTAKLAR KÂR DAĞITIM EXCEL
-        function exportPartnerExcel() {
-            const { sDate, eDate } = getActiveDateRange();
-            const partners = db.partners || [];
-            if (partners.length === 0) return alert("Kayıtlı ortak bulunmamaktadır!");
-
-            let tInc = 0, tExp = 0;
-            (db.incomes || []).filter(i => i.date >= sDate && i.date <= eDate).forEach(i => tInc += (i.cash + i.cc + i.hgs));
-            (db.expenses || []).filter(e => e.date >= sDate && e.date <= eDate).forEach(e => tExp += e.amount);
-            const netProfit = tInc - tExp;
-            const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
-
-            const partnerData = partners.map(p => {
-                const sharePercent = parseFloat(p.share) || 0;
-                const shareAmount = (netProfit * sharePercent) / 100;
-                const pAdvances = periodAdvances.filter(a => a.partnerId == p.id);
-                const pTotalAdv = pAdvances.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
-                const balance = shareAmount - pTotalAdv;
-
-                return {
-                    'Ortak Adı': p.name,
-                    'Hisse Oranı (%)': `%${sharePercent}`,
-                    'Dönem Hakedişi (₺)': shareAmount,
-                    'Alınan Avans (₺)': pTotalAdv,
-                    'Kalan Ödenecek / Durum (₺)': balance,
-                    'Durum Açıklaması': balance >= 0 ? 'Ödenecek' : 'Fazla Avans Aldı'
-                };
-            });
-
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(partnerData);
-            XLSX.utils.book_append_sheet(wb, ws, "Ortak Hesaplaşma");
-            XLSX.writeFile(wb, `Taksi_Ortak_Kâr_Dagitim_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
-        }
-
-        // BİRLEŞİK TÜM RAPORLAR EXCEL
-        function exportCompleteReportModal() {
-            const { sDate, eDate } = getActiveDateRange();
-            const wb = XLSX.utils.book_new();
-
-            // 1. Gelirler
-            const filteredIncomes = (db.incomes || []).filter(i => i.date >= sDate && i.date <= eDate);
-            const incData = filteredIncomes.map(i => ({
-                'Tarih': formatDate(i.date),
-                'Nakit (₺)': i.cash,
-                'Kredi Kartı (₺)': i.cc,
-                'HGS (₺)': i.hgs,
-                'Toplam (₺)': (i.cash + i.cc + i.hgs),
-                'Dolar ($)': i.usd,
-                'Euro (€)': i.eur
-            }));
-            const wsInc = XLSX.utils.json_to_sheet(incData.length ? incData : [{ Bilgi: "Kayıt Yok" }]);
-            XLSX.utils.book_append_sheet(wb, wsInc, "Gelir Dökümü");
-
-            // 2. Giderler
-            const filteredExpenses = (db.expenses || []).filter(e => e.date >= sDate && e.date <= eDate);
-            const expData = filteredExpenses.map(e => ({
-                'Tarih': formatDate(e.date),
-                'Gider Türü': e.desc,
-                'Tutar (₺)': e.amount,
-                'Durum': e.isUnpaid ? 'Ödenmedi' : 'Ödendi'
-            }));
-            const wsExp = XLSX.utils.json_to_sheet(expData.length ? expData : [{ Bilgi: "Kayıt Yok" }]);
-            XLSX.utils.book_append_sheet(wb, wsExp, "Gider Dökümü");
-
-            // 3. Ortaklar
-            const partners = db.partners || [];
-            if (partners.length > 0) {
-                let tInc = 0, tExp = 0;
-                filteredIncomes.forEach(i => tInc += (i.cash + i.cc + i.hgs));
-                filteredExpenses.forEach(e => tExp += e.amount);
-                const netProfit = tInc - tExp;
-                const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
-
-                const partnerData = partners.map(p => {
-                    const sharePercent = parseFloat(p.share) || 0;
-                    const shareAmount = (netProfit * sharePercent) / 100;
-                    const pTotalAdv = periodAdvances.filter(a => a.partnerId == p.id).reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
-                    return {
-                        'Ortak': p.name,
-                        'Hisse': `%${sharePercent}`,
-                        'Hakediş (₺)': shareAmount,
-                        'Alınan Avans (₺)': pTotalAdv,
-                        'Kalan Ödenecek (₺)': shareAmount - pTotalAdv
-                    };
-                });
-                const wsPart = XLSX.utils.json_to_sheet(partnerData);
-                XLSX.utils.book_append_sheet(wb, wsPart, "Ortak Dağıtım");
-            }
-
-            XLSX.writeFile(wb, `Taksi_Tam_Kasa_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
-        }
-
-        // ==================== PROFESYONEL VE HATASIZ PDF ÇIKTI SİSTEMİ ====================
-        // Aktif sekmeye göre tam sayfa A4 uyumlu döküman oluşturur
-        function exportActiveTabPDF() {
-            if (currentReportTab === 'expense') {
-                exportExpenseOnlyPDF();
-            } else if (currentReportTab === 'income') {
-                exportIncomeOnlyPDF();
-            } else {
-                exportMonthlySummaryPDF();
-            }
-        }
-
-        // 1. SADECE GİDER PDF RAPORU
-        function exportExpenseOnlyPDF() {
-            const { sDate, eDate } = getActiveDateRange();
-            const filteredExpenses = (db.expenses || [])
-                .filter(e => e.date >= sDate && e.date <= eDate)
-                .sort((a,b) => a.date.localeCompare(b.date));
-
-            if (filteredExpenses.length === 0) {
-                return alert("Seçili aralıkta PDF olarak çıkarılacak gider kaydı yok!");
-            }
 
             let sumExp = 0, sumUnpaid = 0;
             let rowsHtml = '';
@@ -2249,8 +1976,12 @@
                 `;
             });
 
-            const html = `
-                <div style="font-family: Arial, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
+            if (filteredExpenses.length === 0) {
+                rowsHtml = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">Seçili tarih aralığında gider kaydı bulunamadı.</td></tr>';
+            }
+
+            return `
+                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
                     <!-- Rapor Başlığı -->
                     <table style="width: 100%; border-bottom: 3px solid #ef4444; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
                         <tr>
@@ -2265,7 +1996,7 @@
                         </tr>
                     </table>
 
-                    <!-- Özet Kartları (Table formatında tam uyumlu) -->
+                    <!-- Özet Kartları -->
                     <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
                         <tr>
                             <td style="width: 33.33%; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px;">
@@ -2320,18 +2051,14 @@
                     </table>
                 </div>
             `;
-
-            renderAndDownloadPDF(html, `Taksi_Gider_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
         }
 
-        // 2. SADECE GELİR PDF RAPORU (Kusursuz A4 Tablo Yapısı)
-        function exportIncomeOnlyPDF() {
+        // 2. GELİR RAPORU HTML
+        function getIncomeReportHTML() {
             const { sDate, eDate } = getActiveDateRange();
             const filteredIncomes = (db.incomes || [])
                 .filter(i => i.date >= sDate && i.date <= eDate)
                 .sort((a,b) => a.date.localeCompare(b.date));
-
-            if (filteredIncomes.length === 0) return alert("Seçili aralıkta PDF olarak çıkarılacak gelir kaydı yok!");
 
             let totCash = 0, totCC = 0, totHGS = 0, totTotal = 0, totUSD = 0, totEUR = 0;
             let rowsHtml = '';
@@ -2357,8 +2084,12 @@
                 `;
             });
 
-            const html = `
-                <div style="font-family: Arial, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
+            if (filteredIncomes.length === 0) {
+                rowsHtml = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">Seçili tarih aralığında gelir kaydı bulunamadı.</td></tr>';
+            }
+
+            return `
+                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
                     <!-- Rapor Başlığı -->
                     <table style="width: 100%; border-bottom: 3px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
                         <tr>
@@ -2373,7 +2104,7 @@
                         </tr>
                     </table>
 
-                    <!-- Özet Kartları (Table formatında) -->
+                    <!-- Özet Kartları -->
                     <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
                         <tr>
                             <td style="width: 33.33%; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px;">
@@ -2391,7 +2122,7 @@
                         </tr>
                     </table>
 
-                    <!-- Gelirler Tablosu (Tam %100 Genişlik) -->
+                    <!-- Gelirler Tablosu -->
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                         <thead>
                             <tr style="background: #1e293b; color: #ffffff;">
@@ -2433,15 +2164,12 @@
                     </table>
                 </div>
             `;
-
-            renderAndDownloadPDF(html, `Taksi_Gelir_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
         }
 
-        // 3. ORTAKLAR HESAPLAŞMA VE KÂR DAĞITIM PDF
-        function exportPartnerPDF() {
+        // 3. ORTAKLAR HESAPLAŞMA HTML
+        function getPartnerReportHTML() {
             const { sDate, eDate } = getActiveDateRange();
             const partners = db.partners || [];
-            if (partners.length === 0) return alert("Kayıtlı ortak bulunmamaktadır!");
 
             let tInc = 0, tExp = 0;
             (db.incomes || []).filter(i => i.date >= sDate && i.date <= eDate).forEach(i => tInc += (i.cash + i.cc + i.hgs));
@@ -2471,8 +2199,12 @@
                 `;
             });
 
-            const html = `
-                <div style="font-family: Arial, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
+            if (partners.length === 0) {
+                rowsHtml = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">Kayıtlı ortak bulunamadı.</td></tr>';
+            }
+
+            return `
+                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
                     <!-- Rapor Başlığı -->
                     <table style="width: 100%; border-bottom: 3px solid #7c3aed; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
                         <tr>
@@ -2532,12 +2264,10 @@
                     </table>
                 </div>
             `;
-
-            renderAndDownloadPDF(html, `Taksi_Ortak_Dagitim_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
         }
 
-        // 4. AYLIK ÖZET PDF
-        function exportMonthlySummaryPDF() {
+        // 4. AYLIK ÖZET HTML
+        function getMonthlySummaryReportHTML() {
             let monthlyData = {};
             (db.incomes || []).forEach(i => {
                 let m = i.date.substring(0,7);
@@ -2552,7 +2282,6 @@
                 monthlyData[m].exp += e.amount;
             });
             let months = Object.keys(monthlyData).sort().reverse();
-            if (months.length === 0) return alert("Dışa aktarılacak özet veri yok!");
 
             let rowsHtml = '';
             months.forEach((m, idx) => {
@@ -2570,8 +2299,12 @@
                 `;
             });
 
-            const html = `
-                <div style="font-family: Arial, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
+            if (months.length === 0) {
+                rowsHtml = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Henüz özetlenecek veri bulunmuyor.</td></tr>';
+            }
+
+            return `
+                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
                     <table style="width: 100%; border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
                         <tr>
                             <td style="vertical-align: middle;">
@@ -2598,49 +2331,380 @@
                     </table>
                 </div>
             `;
-
-            renderAndDownloadPDF(html, `Taksi_Aylik_Ozet_${toISO(new Date())}.pdf`);
         }
 
-        // ==================== HTML2PDF MOTOR ÇALIŞTIRICI ====================
-        // Ekran kaydırmasından, dar mobil ekranlardan veya offsetten kaynaklanan kesilmeyi %100 önler
+        // ==================== YAZDIRMA VE PDF MOTORLARI (HER CİHAZA UYUMLU) ====================
+
+        // 1. DİREKT PDF DOSYASI İNDİR (İzole Iframe ile Kesilmesiz ve Asla Boş Çıkmayan Motor)
         function renderAndDownloadPDF(htmlContent, fileName) {
-            const container = document.getElementById('pdfExportPreview');
-            container.innerHTML = htmlContent;
-            container.style.display = 'block';
+            // Görünmez, bağımsız bir iframe oluşturuyoruz. Bu sayede sayfa kaydırması (scroll) ve mobil dar ekran sıfırlanır!
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.left = '0';
+            iframe.style.top = '0';
+            iframe.style.width = '794px';
+            iframe.style.height = '1123px';
+            iframe.style.zIndex = '-99999';
+            iframe.style.opacity = '0.01'; // 0 veya display:none yapmıyoruz ki tarayıcı tam boyutsal render alsın
+            iframe.style.pointerEvents = 'none';
+            iframe.style.border = 'none';
+            document.body.appendChild(iframe);
 
-            // Geçici olarak sayfayı en üste alıyoruz ki html2canvas sıfır noktasından kayıpsız çekim yapsın
-            const prevScrollX = window.scrollX || window.pageXOffset || 0;
-            const prevScrollY = window.scrollY || window.pageYOffset || 0;
-            window.scrollTo(0, 0);
+            const iDoc = iframe.contentWindow.document;
+            iDoc.open();
+            iDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        * { box-sizing: border-box; margin: 0; padding: 0; }
+                        body {
+                            background: #ffffff !important;
+                            color: #0f172a !important;
+                            font-family: Arial, Helvetica, sans-serif;
+                            width: 794px;
+                            padding: 24px;
+                        }
+                        table { width: 100%; border-collapse: collapse; }
+                    </style>
+                </head>
+                <body>
+                    <div id="captureArea">${htmlContent}</div>
+                </body>
+                </html>
+            `);
+            iDoc.close();
 
-            const opt = {
-                margin: [8, 8, 8, 8],
-                filename: fileName,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2, 
-                    useCORS: true, 
-                    scrollX: 0,
-                    scrollY: 0,
-                    width: 794,
-                    windowWidth: 794,
-                    logging: false
-                },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+            // Iframe'in DOM ve stilleri oturtması için kısa bekleme
+            setTimeout(() => {
+                const target = iDoc.getElementById('captureArea');
+                const opt = {
+                    margin: [8, 8, 8, 8],
+                    filename: fileName,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        windowWidth: 794
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
 
-            html2pdf().set(opt).from(container).save().then(() => {
-                container.style.display = 'none';
-                container.innerHTML = '';
-                window.scrollTo(prevScrollX, prevScrollY);
-            }).catch(err => {
-                console.error("PDF oluşturma hatası:", err);
-                container.style.display = 'none';
-                container.innerHTML = '';
-                window.scrollTo(prevScrollX, prevScrollY);
-                alert("PDF oluşturulurken bir sorun oluştu.");
+                html2pdf().set(opt).from(target).save().then(() => {
+                    if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                }).catch(err => {
+                    console.error("PDF hatası:", err);
+                    if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                    // Mobil tarayıcı doğrudan indirmeye izin vermezse yedek olarak yazdırma penceresini açar
+                    openPrintWindow(htmlContent, fileName);
+                });
+            }, 300);
+        }
+
+        // 2. YAZDIR / PDF OLARAK KAYDET (Tüm cihazlarda %100 kristal netlikte vektörel sistem önizlemesi)
+        function openPrintWindow(htmlContent, title) {
+            const printWin = window.open('', '_blank');
+            if (!printWin) {
+                // Eğer pop-up engellendiyse kullanıcıyı bilgilendir
+                alert("Yazdırma sayfası için lütfen tarayıcınızın açılır pencere (pop-up) engelini kaldırın veya 'PDF İndir' butonunu kullanın.");
+                return;
+            }
+            printWin.document.open();
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${title}</title>
+                    <style>
+                        * { box-sizing: border-box; }
+                        body {
+                            font-family: Arial, Helvetica, sans-serif;
+                            color: #0f172a;
+                            background: #ffffff;
+                            margin: 0;
+                            padding: 20px;
+                        }
+                        table { width: 100%; border-collapse: collapse; }
+                        @page {
+                            size: A4 portrait;
+                            margin: 10mm;
+                        }
+                        @media print {
+                            body { padding: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${htmlContent}
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                            }, 300);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+
+        // ==================== BUTON TETİKLEYİCİLERİ ====================
+
+        // AKTİF SEKME PDF İNDİR
+        function exportActiveTabPDF() {
+            const { sDate, eDate } = getActiveDateRange();
+            if (currentReportTab === 'expense') {
+                const html = getExpenseReportHTML();
+                renderAndDownloadPDF(html, `Taksi_Gider_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
+            } else if (currentReportTab === 'income') {
+                const html = getIncomeReportHTML();
+                renderAndDownloadPDF(html, `Taksi_Gelir_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
+            } else {
+                const html = getMonthlySummaryReportHTML();
+                renderAndDownloadPDF(html, `Taksi_Aylik_Ozet_${toISO(new Date())}.pdf`);
+            }
+        }
+
+        // AKTİF SEKME YAZDIR / PDF ÖNİZLE
+        function printActiveTab() {
+            const { sDate, eDate } = getActiveDateRange();
+            if (currentReportTab === 'expense') {
+                openPrintWindow(getExpenseReportHTML(), `Taksi Gider Raporu (${formatDate(sDate)} - ${formatDate(eDate)})`);
+            } else if (currentReportTab === 'income') {
+                openPrintWindow(getIncomeReportHTML(), `Taksi Gelir Raporu (${formatDate(sDate)} - ${formatDate(eDate)})`);
+            } else {
+                openPrintWindow(getMonthlySummaryReportHTML(), `Taksi Aylık Özet Raporu`);
+            }
+        }
+
+        // ORTAKLAR PDF İNDİR
+        function exportPartnerPDF() {
+            const { sDate, eDate } = getActiveDateRange();
+            if ((db.partners || []).length === 0) return alert("Kayıtlı ortak bulunmamaktadır!");
+            const html = getPartnerReportHTML();
+            renderAndDownloadPDF(html, `Taksi_Ortak_Dagitim_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
+        }
+
+        // ORTAKLAR YAZDIR
+        function printPartnerReport() {
+            const { sDate, eDate } = getActiveDateRange();
+            if ((db.partners || []).length === 0) return alert("Kayıtlı ortak bulunmamaktadır!");
+            openPrintWindow(getPartnerReportHTML(), `Ortaklar Hesaplaşma Raporu (${formatDate(sDate)} - ${formatDate(eDate)})`);
+        }
+
+        // ==================== EXCEL ÇIKTILARI ====================
+        function exportActiveTabExcel() {
+            if (currentReportTab === 'expense') {
+                exportExpenseOnlyExcel();
+            } else if (currentReportTab === 'income') {
+                exportIncomeOnlyExcel();
+            } else {
+                exportSummaryOnlyExcel();
+            }
+        }
+
+        function exportExpenseOnlyExcel() {
+            const { sDate, eDate } = getActiveDateRange();
+            const filteredExpenses = (db.expenses || [])
+                .filter(e => e.date >= sDate && e.date <= eDate)
+                .sort((a,b) => a.date.localeCompare(b.date));
+
+            if (filteredExpenses.length === 0) return alert("Seçili tarih aralığında dışa aktarılacak gider kaydı yok!");
+
+            let sumExp = 0;
+            const expData = filteredExpenses.map(e => {
+                sumExp += e.amount;
+                return {
+                    'Tarih': formatDate(e.date),
+                    'Gider Türü / Açıklaması': e.desc,
+                    'Tutar (₺)': e.amount,
+                    'Ödeme Durumu': e.isUnpaid ? 'Ödenmedi (Borç)' : 'Ödendi'
+                };
             });
+
+            expData.push({
+                'Tarih': 'GENEL TOPLAM',
+                'Gider Türü / Açıklaması': `${filteredExpenses.length} Kalem Gider`,
+                'Tutar (₺)': sumExp,
+                'Ödeme Durumu': ''
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(expData);
+            XLSX.utils.book_append_sheet(wb, ws, "Gider Raporu");
+            XLSX.writeFile(wb, `Taksi_Gider_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
+        }
+
+        function exportIncomeOnlyExcel() {
+            const { sDate, eDate } = getActiveDateRange();
+            const filteredIncomes = (db.incomes || [])
+                .filter(i => i.date >= sDate && i.date <= eDate)
+                .sort((a,b) => a.date.localeCompare(b.date));
+
+            if (filteredIncomes.length === 0) return alert("Seçili tarih aralığında dışa aktarılacak gelir kaydı yok!");
+
+            let totCash = 0, totCC = 0, totHGS = 0, totTotal = 0, totUSD = 0, totEUR = 0;
+            const incData = filteredIncomes.map(i => {
+                const dayTotal = (i.cash || 0) + (i.cc || 0) + (i.hgs || 0);
+                totCash += (i.cash || 0);
+                totCC += (i.cc || 0);
+                totHGS += (i.hgs || 0);
+                totTotal += dayTotal;
+                totUSD += (i.usd || 0);
+                totEUR += (i.eur || 0);
+
+                return {
+                    'Tarih': formatDate(i.date),
+                    'Nakit (₺)': i.cash || 0,
+                    'Kredi Kartı / POS (₺)': i.cc || 0,
+                    'HGS (₺)': i.hgs || 0,
+                    'Günlük Toplam (₺)': dayTotal,
+                    'Dolar ($)': i.usd || 0,
+                    'Euro (€)': i.eur || 0
+                };
+            });
+
+            incData.push({
+                'Tarih': 'GENEL TOPLAM',
+                'Nakit (₺)': totCash,
+                'Kredi Kartı / POS (₺)': totCC,
+                'HGS (₺)': totHGS,
+                'Günlük Toplam (₺)': totTotal,
+                'Dolar ($)': totUSD,
+                'Euro (€)': totEUR
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(incData);
+            XLSX.utils.book_append_sheet(wb, ws, "Gelir Raporu");
+            XLSX.writeFile(wb, `Taksi_Gelir_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
+        }
+
+        function exportSummaryOnlyExcel() {
+            let monthlyData = {};
+            (db.incomes || []).forEach(i => {
+                let m = i.date.substring(0,7);
+                if(!monthlyData[m]) monthlyData[m] = { inc:0, exp:0, usd:0, eur:0 };
+                monthlyData[m].inc += (i.cash + i.cc + i.hgs);
+                monthlyData[m].usd += (i.usd || 0);
+                monthlyData[m].eur += (i.eur || 0);
+            });
+            (db.expenses || []).forEach(e => {
+                let m = e.date.substring(0,7);
+                if(!monthlyData[m]) monthlyData[m] = { inc:0, exp:0, usd:0, eur:0 };
+                monthlyData[m].exp += e.amount;
+            });
+            let months = Object.keys(monthlyData).sort().reverse();
+            if (months.length === 0) return alert("Dışa aktarılacak özet veri yok!");
+
+            const summaryData = months.map(m => {
+                let d = monthlyData[m];
+                return {
+                    'Ay / Yıl': m.split('-')[1] + " / " + m.split('-')[0],
+                    'Toplam Gelir (₺)': d.inc,
+                    'Toplam Gider (₺)': d.exp,
+                    'Net Kâr (₺)': d.inc - d.exp,
+                    'Dolar ($)': d.usd,
+                    'Euro (€)': d.eur
+                };
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws, "Aylık Özet");
+            XLSX.writeFile(wb, `Taksi_Aylik_Ozet_${toISO(new Date())}.xlsx`);
+        }
+
+        function exportPartnerExcel() {
+            const { sDate, eDate } = getActiveDateRange();
+            const partners = db.partners || [];
+            if (partners.length === 0) return alert("Kayıtlı ortak bulunmamaktadır!");
+
+            let tInc = 0, tExp = 0;
+            (db.incomes || []).filter(i => i.date >= sDate && i.date <= eDate).forEach(i => tInc += (i.cash + i.cc + i.hgs));
+            (db.expenses || []).filter(e => e.date >= sDate && e.date <= eDate).forEach(e => tExp += e.amount);
+            const netProfit = tInc - tExp;
+            const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
+
+            const partnerData = partners.map(p => {
+                const sharePercent = parseFloat(p.share) || 0;
+                const shareAmount = (netProfit * sharePercent) / 100;
+                const pAdvances = periodAdvances.filter(a => a.partnerId == p.id);
+                const pTotalAdv = pAdvances.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+                const balance = shareAmount - pTotalAdv;
+
+                return {
+                    'Ortak Adı': p.name,
+                    'Hisse Oranı (%)': `%${sharePercent}`,
+                    'Dönem Hakedişi (₺)': shareAmount,
+                    'Alınan Avans (₺)': pTotalAdv,
+                    'Kalan Ödenecek / Durum (₺)': balance,
+                    'Durum Açıklaması': balance >= 0 ? 'Ödenecek' : 'Fazla Avans Aldı'
+                };
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(partnerData);
+            XLSX.utils.book_append_sheet(wb, ws, "Ortak Hesaplaşma");
+            XLSX.writeFile(wb, `Taksi_Ortak_Kâr_Dagitim_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
+        }
+
+        function exportCompleteReportModal() {
+            const { sDate, eDate } = getActiveDateRange();
+            const wb = XLSX.utils.book_new();
+
+            const filteredIncomes = (db.incomes || []).filter(i => i.date >= sDate && i.date <= eDate);
+            const incData = filteredIncomes.map(i => ({
+                'Tarih': formatDate(i.date),
+                'Nakit (₺)': i.cash,
+                'Kredi Kartı (₺)': i.cc,
+                'HGS (₺)': i.hgs,
+                'Toplam (₺)': (i.cash + i.cc + i.hgs),
+                'Dolar ($)': i.usd,
+                'Euro (€)': i.eur
+            }));
+            const wsInc = XLSX.utils.json_to_sheet(incData.length ? incData : [{ Bilgi: "Kayıt Yok" }]);
+            XLSX.utils.book_append_sheet(wb, wsInc, "Gelir Dökümü");
+
+            const filteredExpenses = (db.expenses || []).filter(e => e.date >= sDate && e.date <= eDate);
+            const expData = filteredExpenses.map(e => ({
+                'Tarih': formatDate(e.date),
+                'Gider Türü': e.desc,
+                'Tutar (₺)': e.amount,
+                'Durum': e.isUnpaid ? 'Ödenmedi' : 'Ödendi'
+            }));
+            const wsExp = XLSX.utils.json_to_sheet(expData.length ? expData : [{ Bilgi: "Kayıt Yok" }]);
+            XLSX.utils.book_append_sheet(wb, wsExp, "Gider Dökümü");
+
+            const partners = db.partners || [];
+            if (partners.length > 0) {
+                let tInc = 0, tExp = 0;
+                filteredIncomes.forEach(i => tInc += (i.cash + i.cc + i.hgs));
+                filteredExpenses.forEach(e => tExp += e.amount);
+                const netProfit = tInc - tExp;
+                const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
+
+                const partnerData = partners.map(p => {
+                    const sharePercent = parseFloat(p.share) || 0;
+                    const shareAmount = (netProfit * sharePercent) / 100;
+                    const pTotalAdv = periodAdvances.filter(a => a.partnerId == p.id).reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+                    return {
+                        'Ortak': p.name,
+                        'Hisse': `%${sharePercent}`,
+                        'Hakediş (₺)': shareAmount,
+                        'Alınan Avans (₺)': pTotalAdv,
+                        'Kalan Ödenecek (₺)': shareAmount - pTotalAdv
+                    };
+                });
+                const wsPart = XLSX.utils.json_to_sheet(partnerData);
+                XLSX.utils.book_append_sheet(wb, wsPart, "Ortak Dağıtım");
+            }
+
+            XLSX.writeFile(wb, `Taksi_Tam_Kasa_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
         }
     </script>
 </body>
