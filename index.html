@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Taksi Gelir Gider Takip - Detaylı</title>
     <!-- Bootstrap CSS -->
-    <link href="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css](https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css)" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SheetJS for Excel Export -->
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js](https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js)"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- html2pdf for PDF Export -->
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js](https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js)"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
         body { background-color: #f8f9fa; padding-bottom: 90px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -377,7 +377,7 @@
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js](https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Main Logic -->
     <script>
@@ -392,24 +392,19 @@
         const fmtUSD = (num) => '$' + parseFloat(num).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
         const fmtEUR = (num) => '€' + parseFloat(num).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
 
-        // Sayfa Yüklendiğinde (Eski verileri çeker)
+        // Sayfa Yüklendiğinde
         window.onload = () => {
             const stored = localStorage.getItem('taksiDB_pro');
             if (stored) { db = JSON.parse(stored); }
             
-            // Set default dates
             const todayDate = new Date();
             const todayStr = todayDate.toISOString().split('T')[0];
-            
-            // First day of current month
             const firstDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1).toISOString().split('T')[0];
             
             document.getElementById('incDate').value = todayStr;
             document.getElementById('expDate').value = todayStr;
-            
             document.getElementById('dashStartDate').value = firstDay;
             document.getElementById('dashEndDate').value = todayStr;
-            
             document.getElementById('repStartDate').value = firstDay;
             document.getElementById('repEndDate').value = todayStr;
             
