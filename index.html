@@ -14,7 +14,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SheetJS for Excel Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- html2pdf for PDF Export -->
+    <!-- jsPDF & autoTable for Direct High-Quality Vector PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <!-- html2pdf Bundle -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -260,7 +263,7 @@
             border: 1px solid var(--input-border);
             border-radius: 8px;
             font-size: 0.9rem;
-            padding: 9px 12px;
+            padding: 8px 12px;
         }
         .form-control:focus, .form-select:focus {
             background-color: var(--input-bg);
@@ -292,14 +295,6 @@
             white-space: nowrap;
             border-bottom: 2px solid var(--border-color);
             padding: 10px 12px;
-        }
-        .table tfoot th {
-            background-color: var(--bg-surface-soft);
-            color: var(--text-main);
-            font-weight: 800;
-            white-space: nowrap;
-            padding: 10px 12px;
-            border-top: 2px solid var(--border-color);
         }
         .table td {
             vertical-align: middle;
@@ -341,9 +336,9 @@
         /* Action Buttons */
         .action-btn {
             border-radius: 10px;
-            padding: 10px 12px;
+            padding: 9px 12px;
             font-weight: 700;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -362,12 +357,6 @@
         .btn-taxi:hover {
             background-color: var(--taxi-yellow-hover);
             color: #000;
-        }
-        .btn-sm-custom {
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            border-radius: 8px;
-            font-weight: 600;
         }
         .delete-btn {
             color: #ef4444;
@@ -396,8 +385,9 @@
             background: var(--bg-surface-soft);
             border-radius: 10px;
             font-weight: 600;
-            padding: 9px 12px;
+            padding: 8px 10px;
             border: 1px solid var(--border-color);
+            font-size: 0.8rem;
         }
         .nav-pills .nav-link.active {
             background-color: var(--taxi-yellow);
@@ -406,7 +396,7 @@
             border-color: var(--taxi-yellow);
         }
 
-        /* File Upload Box (Replaces default Choose File) */
+        /* File Upload Box */
         .file-upload-box {
             background: var(--bg-surface-soft);
             border: 2px dashed var(--border-color);
@@ -497,11 +487,12 @@
                     </button>
                 </div>
             </div>
-            <!-- Quick Preset Filters -->
+            <!-- Quick Preset Filters (Bu Ay, Geçen Ay, Bu Yıl, Geçen Yıl, Son 30 Gün, Tüm Zamanlar) -->
             <div class="filter-presets">
                 <button class="preset-btn active" id="presetBtn-thisMonth" onclick="setDatePreset('thisMonth')">Bu Ay</button>
                 <button class="preset-btn" id="presetBtn-lastMonth" onclick="setDatePreset('lastMonth')">Geçen Ay</button>
                 <button class="preset-btn" id="presetBtn-thisYear" onclick="setDatePreset('thisYear')">Bu Yıl</button>
+                <button class="preset-btn" id="presetBtn-lastYear" onclick="setDatePreset('lastYear')">Geçen Yıl</button>
                 <button class="preset-btn" id="presetBtn-last30" onclick="setDatePreset('last30')">Son 30 Gün</button>
                 <button class="preset-btn" id="presetBtn-all" onclick="setDatePreset('all')">Tüm Zamanlar</button>
             </div>
@@ -543,7 +534,7 @@
                 <div class="card p-3 mb-2">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="fw-bold small text-muted"><i class="fas fa-users me-1 text-primary"></i>Ortaklar & Avans Durumu (Seçili Dönem)</span>
-                        <a href="javascript:void(0)" onclick="switchTab('partners')" class="small fw-bold text-decoration-none">Detaya Git &rarr;</a>
+                        <a href="javascript:void(0)" onclick="switchTab('reports'); setActiveReportTab('partners_advances');" class="small fw-bold text-decoration-none">Detaylı Rapor &rarr;</a>
                     </div>
                     <div class="row g-2 text-center">
                         <div class="col-4 border-end">
@@ -688,17 +679,17 @@
         </div>
     </div>
 
-    <!-- ==================== 4. ORTAKLAR & KÂR DAĞITIMI ==================== -->
+    <!-- ==================== 4. ORTAKLAR VE AVANS YÖNETİMİ ==================== -->
     <div id="partners" class="section">
         <!-- Ortak Özet Kartı -->
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span class="d-flex align-items-center gap-2">
-                    <i class="fas fa-users-cog text-primary"></i>
-                    <span>Ortaklık & Kâr Paylaşımı</span>
+                    <i class="fas fa-users text-primary"></i>
+                    <span>Ortaklar ve Hisse Yönetimi</span>
                 </span>
-                <button class="btn btn-sm btn-primary btn-sm-custom" onclick="openPartnerModal()">
-                    <i class="fas fa-user-plus me-1"></i>Yeni Ortak Ekle
+                <button class="btn btn-sm btn-primary action-btn py-1 px-3" onclick="openPartnerModal()">
+                    <i class="fas fa-user-plus me-1"></i>Yeni Ortak
                 </button>
             </div>
             <div class="card-body">
@@ -716,62 +707,13 @@
                     </div>
                 </div>
 
-                <!-- Dönem Kâr ve Dağıtım Tablosu -->
-                <div class="alert alert-secondary py-2 small mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span>Seçili Dönem Net Araç Kârı:</span>
-                        <strong class="text-success" id="partnerCalcNetProfit">₺0,00</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mt-1">
-                        <span>Verilen Toplam Avans:</span>
-                        <strong class="text-danger" id="partnerCalcTotalAdvance">₺0,00</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mt-1 border-top pt-1">
-                        <span>Kalan Net Ödenecek / Dağıtılacak:</span>
-                        <strong class="text-primary" id="partnerCalcRemaining">₺0,00</strong>
-                    </div>
-                </div>
-
-                <!-- Ortaklar Hesaplaşma Tablosu -->
+                <!-- Kayıtlı Ortaklar Tablosu -->
                 <div class="table-responsive mb-3">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Ortak Adı</th>
-                                <th class="text-center">Hisse</th>
-                                <th class="text-end">Hakediş (₺)</th>
-                                <th class="text-end">Alınan Avans (₺)</th>
-                                <th class="text-end">Kalan Ödenecek (₺)</th>
-                                <th class="text-center">İşlem</th>
-                            </tr>
-                        </thead>
-                        <tbody id="partnerSettlementTable"></tbody>
-                    </table>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <button class="btn btn-warning action-btn flex-grow-1" onclick="openAdvanceModal()">
-                        <i class="fas fa-hand-holding-usd"></i>Avans Ödemesi Gir
-                    </button>
-                    <button class="btn btn-outline-secondary action-btn" onclick="openAdvanceHistoryModal()" title="Avans Geçmişini Görüntüle">
-                        <i class="fas fa-history"></i>Avans Geçmişi
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Ortak Listesi Yönetimi -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span class="small fw-bold"><i class="fas fa-address-book me-2"></i>Kayıtlı Ortaklar Listesi</span>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
                                 <th>Adı Soyadı</th>
-                                <th>Hisse (%)</th>
+                                <th class="text-center">Hisse</th>
                                 <th>Telefon / Not</th>
                                 <th class="text-center">İşlem</th>
                             </tr>
@@ -779,61 +721,77 @@
                         <tbody id="partnerListTable"></tbody>
                     </table>
                 </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-warning action-btn flex-grow-1" onclick="openAdvanceModal()">
+                        <i class="fas fa-hand-holding-usd"></i>Avans Ödemesi Gir
+                    </button>
+                    <button class="btn btn-primary action-btn" onclick="switchTab('reports'); setActiveReportTab('partners_advances');">
+                        <i class="fas fa-chart-pie me-1"></i>Kâr & Avans Raporuna Git
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Ortak Raporu Çıktı Butonları -->
-        <div class="export-card">
-            <h6 class="fw-bold mb-2 small"><i class="fas fa-file-export me-1 text-primary"></i>Ortak Hesaplaşma Raporu Al</h6>
-            <div class="row g-2">
-                <div class="col-4">
-                    <button class="btn btn-danger action-btn w-100" onclick="exportPartnerPDF()">
-                        <i class="fas fa-file-pdf"></i>PDF İndir
-                    </button>
-                </div>
-                <div class="col-4">
-                    <button class="btn btn-outline-dark action-btn w-100" onclick="printPartnerReport()">
-                        <i class="fas fa-print"></i>Yazdır
-                    </button>
-                </div>
-                <div class="col-4">
-                    <button class="btn btn-success action-btn w-100" onclick="exportPartnerExcel()">
-                        <i class="fas fa-file-excel"></i>Excel
-                    </button>
+        <!-- Avans Geçmişi Kartı (Sayfa İçinde Doğrudan Filtreli ve Görünür) -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="small fw-bold"><i class="fas fa-history me-2 text-warning"></i>Avans Ödeme Geçmişi (Seçili Dönem)</span>
+                <span class="badge bg-secondary" id="advHistoryCountBadge">0 Kayıt</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Ortak</th>
+                                <th>Açıklama</th>
+                                <th class="text-end">Tutar (₺)</th>
+                                <th class="text-center">Sil</th>
+                            </tr>
+                        </thead>
+                        <tbody id="advanceHistoryInPageView"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ==================== 5. RAPORLAR ==================== -->
+    <!-- ==================== 5. RAPORLAR (GELİRLER, GİDERLER, ORTAKLAR & AVANSLAR, AYLIK ÖZET) ==================== -->
     <div id="reports" class="section">
         
         <div class="card" id="reportContainer">
             <div class="card-body p-2 p-md-3">
                 <ul class="nav nav-pills mb-3 nav-fill gap-1" id="pills-tab" role="tablist">
                     <li class="nav-item m-0" role="presentation">
-                        <button class="nav-link active py-2 small" data-bs-toggle="pill" data-bs-target="#pills-income" type="button" onclick="setActiveReportTab('income')">
+                        <button class="nav-link active py-2" data-bs-toggle="pill" data-bs-target="#pills-income" type="button" onclick="setActiveReportTab('income')">
                             <i class="fas fa-wallet me-1"></i>Gelirler
                         </button>
                     </li>
                     <li class="nav-item m-0" role="presentation">
-                        <button class="nav-link py-2 small" data-bs-toggle="pill" data-bs-target="#pills-expense" type="button" onclick="setActiveReportTab('expense')">
+                        <button class="nav-link py-2" data-bs-toggle="pill" data-bs-target="#pills-expense" type="button" onclick="setActiveReportTab('expense')">
                             <i class="fas fa-receipt me-1"></i>Giderler
                         </button>
                     </li>
                     <li class="nav-item m-0" role="presentation">
-                        <button class="nav-link py-2 small" data-bs-toggle="pill" data-bs-target="#pills-summary" type="button" onclick="setActiveReportTab('summary')">
+                        <button class="nav-link py-2" id="pillBtn-partners_advances" data-bs-toggle="pill" data-bs-target="#pills-partners" type="button" onclick="setActiveReportTab('partners_advances')">
+                            <i class="fas fa-users-cog me-1"></i>Ortak & Avans
+                        </button>
+                    </li>
+                    <li class="nav-item m-0" role="presentation">
+                        <button class="nav-link py-2" data-bs-toggle="pill" data-bs-target="#pills-summary" type="button" onclick="setActiveReportTab('summary')">
                             <i class="fas fa-calendar-check me-1"></i>Aylık Özet
                         </button>
                     </li>
                 </ul>
                 
                 <div class="tab-content" id="pills-tabContent">
-                    <!-- 1. Income Table -->
+                    <!-- 1. GELİRLER TABLOSU -->
                     <div class="tab-pane fade show active" id="pills-income">
                         <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                             <span class="small fw-bold text-muted" id="incCountBadge">0 Kayıt</span>
-                            <span class="badge bg-primary">Gelir Raporu</span>
+                            <span class="badge bg-primary">Gelirler Raporu</span>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-hover">
@@ -849,59 +807,119 @@
                                     </tr>
                                 </thead>
                                 <tbody id="reportIncomeTable"></tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th>TOPLAM</th>
-                                        <th class="text-end" id="totIncCash">₺0,00</th>
-                                        <th class="text-end" id="totIncCC">₺0,00</th>
-                                        <th class="text-end" id="totIncHGS">₺0,00</th>
-                                        <th class="text-end" id="totIncUSD">$0,00</th>
-                                        <th class="text-end" id="totIncEUR">€0,00</th>
-                                        <th></th>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
                     </div>
                     
-                    <!-- 2. Expense Table -->
+                    <!-- 2. GİDERLER TABLOSU -->
                     <div class="tab-pane fade" id="pills-expense">
                         <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                             <span class="small fw-bold text-muted" id="expCountBadge">0 Kayıt</span>
-                            <span class="badge bg-danger">Gider Raporu</span>
+                            <span class="badge bg-danger">Giderler Raporu</span>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
                                         <th>Tarih</th>
-                                        <th>Gider Türü</th>
+                                        <th>Gider Türü / Açıklama</th>
                                         <th class="text-end">Tutar(₺)</th>
                                         <th class="text-center">Durum</th>
                                         <th class="text-center">İşlem</th>
                                     </tr>
                                 </thead>
                                 <tbody id="reportExpenseTable"></tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th colspan="2">GENEL TOPLAM GİDER</th>
-                                        <th class="text-end text-danger" id="totExpAmount">₺0,00</th>
-                                        <th colspan="2"></th>
-                                    </tr>
-                                    <tr>
-                                        <th colspan="2">ÖDENMEMİŞ (BORÇ)</th>
-                                        <th class="text-end text-warning" id="totExpUnpaid">₺0,00</th>
-                                        <th colspan="2"></th>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
                     </div>
 
-                    <!-- 3. Monthly Summary Table -->
+                    <!-- 3. ORTAKLAR VE AVANSLAR RAPORU (KİŞİYE ÖZEL & DÖNEMSEL HESAPLAŞMA) -->
+                    <div class="tab-pane fade" id="pills-partners">
+                        <!-- Kişi Seçim Filtresi -->
+                        <div class="p-2 mb-3 rounded border" style="background: var(--bg-surface-soft);">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-bold mb-1"><i class="fas fa-user-tag me-1 text-primary"></i>Kişi / Ortak Filtresi:</label>
+                                    <select id="partnerReportFilterSelect" class="form-select form-select-sm" onchange="renderPartnerReportView()">
+                                        <option value="all">👥 Tüm Ortaklar (Genel Dağıtım)</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6 text-md-end">
+                                    <span class="small text-muted d-block">Raporlama Dönemi:</span>
+                                    <strong class="small" id="partnerReportPeriodText">-</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Kişiye Özel Özet Kartı (Belirli Ortak Seçildiğinde Gösterilir) -->
+                        <div id="singlePartnerSummaryBox" class="alert alert-secondary py-3 px-3 mb-3 d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-primary" id="spName">-</h6>
+                                <span class="badge bg-primary fs-6" id="spShare">%0</span>
+                            </div>
+                            <div class="row g-2 text-center mt-1">
+                                <div class="col-4 border-end">
+                                    <small class="text-muted d-block">Dönem Hakedişi</small>
+                                    <strong class="text-success fs-6" id="spEarned">₺0,00</strong>
+                                </div>
+                                <div class="col-4 border-end">
+                                    <small class="text-muted d-block">Alınan Avans</small>
+                                    <strong class="text-danger fs-6" id="spAdvance">₺0,00</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Kalan Bakiye</small>
+                                    <strong class="fs-6" id="spBalance">₺0,00</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tüm Ortaklar Genel Tablosu -->
+                        <div id="allPartnersTableView" class="mb-3">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Ortak Adı</th>
+                                            <th class="text-center">Hisse</th>
+                                            <th class="text-end">Hakediş (₺)</th>
+                                            <th class="text-end">Alınan Avans (₺)</th>
+                                            <th class="text-end">Kalan Ödenecek (₺)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportPartnersTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Avans Dökümü Tablosu (Seçili Kişi veya Tüm Ortaklar) -->
+                        <div class="card mb-0">
+                            <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                                <span class="small fw-bold"><i class="fas fa-hand-holding-usd me-1 text-warning"></i>Avans Ödeme Dökümü</span>
+                                <span class="small fw-bold text-danger" id="reportAdvancesTotalSum">Toplam: ₺0,00</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Tarih</th>
+                                                <th>Ortak</th>
+                                                <th>Açıklama</th>
+                                                <th class="text-end">Tutar (₺)</th>
+                                                <th class="text-center">Sil</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="reportAdvancesTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. AYLIK KÜMÜLATİF ÖZET -->
                     <div class="tab-pane fade" id="pills-summary">
                         <div class="d-flex justify-content-between align-items-center mb-2 px-1">
-                            <span class="small fw-bold text-muted">Aylık Kümülatif Döküm</span>
+                            <span class="small fw-bold text-muted">Aylık Kümülatif Kâr/Zarar</span>
                             <span class="badge bg-success">Net Kâr Analizi</span>
                         </div>
                         <div class="table-responsive">
@@ -933,19 +951,14 @@
             </div>
             
             <div class="row g-2">
-                <div class="col-4">
-                    <button class="btn btn-danger action-btn w-100" onclick="exportActiveTabPDF()" title="PDF Dosyasını Doğrudan İndir">
-                        <i class="fas fa-file-pdf"></i>PDF İndir
+                <div class="col-6">
+                    <button class="btn btn-outline-dark action-btn w-100" onclick="printActiveTab()" title="Yazdır veya PDF Olarak Kaydet">
+                        <i class="fas fa-print"></i>Yazdır / PDF Kaydet
                     </button>
                 </div>
-                <div class="col-4">
-                    <button class="btn btn-outline-dark action-btn w-100" onclick="printActiveTab()" title="Yazdır veya PDF Olarak Önizle">
-                        <i class="fas fa-print"></i>Yazdır
-                    </button>
-                </div>
-                <div class="col-4">
+                <div class="col-6">
                     <button class="btn btn-success action-btn w-100" onclick="exportActiveTabExcel()" title="Excel Tablosu İndir">
-                        <i class="fas fa-file-excel"></i>Excel
+                        <i class="fas fa-file-excel"></i>Excel İndir
                     </button>
                 </div>
                 <div class="col-12 mt-1">
@@ -967,7 +980,7 @@
             <div class="card-body">
                 <div class="alert alert-secondary py-2 small mb-3">
                     <i class="fas fa-shield-alt text-success me-1"></i>
-                    Tüm verileriniz tamamen yerel olarak bu tarayıcıda saklanır. Güvenlik ve veri kaybını önlemek için haftalık veya aylık olarak <strong>"Yedek İndir"</strong> işlemi yapınız.
+                    Tüm verileriniz tamamen yerel olarak bu tarayıcıda saklanır. Güvenlik ve veri kaybını önlemek için düzenli olarak <strong>"Yedek İndir"</strong> işlemi yapınız.
                 </div>
                 
                 <h6 class="fw-bold mb-2 small text-muted">YEDEK AL</h6>
@@ -978,7 +991,6 @@
                 <hr>
                 
                 <h6 class="fw-bold mb-2 small text-muted">YEDEK YÜKLE (İÇERİ AKTAR)</h6>
-                <!-- Özel Tasarımlı Dosya Seçim Kutusu (Choose File yazısı yerine şık Türkçe alan) -->
                 <div class="file-upload-box" onclick="document.getElementById('importFile').click()">
                     <i class="fas fa-cloud-upload-alt d-block"></i>
                     <span class="fw-bold d-block mb-1">Yedek Dosyası Seçin (.json)</span>
@@ -1079,37 +1091,6 @@
         </div>
     </div>
 
-    <!-- Avans Geçmişi Modal -->
-    <div class="modal fade" id="advanceHistoryModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Tüm Avans Geçmişi</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Tarih</th>
-                                    <th>Ortak</th>
-                                    <th>Açıklama</th>
-                                    <th class="text-end">Tutar (₺)</th>
-                                    <th class="text-center">Sil</th>
-                                </tr>
-                            </thead>
-                            <tbody id="advanceHistoryTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Kapat</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- BOTTOM NAVIGATION -->
     <div class="bottom-nav">
         <div class="nav-item active" onclick="switchTab('dashboard')">
@@ -1165,10 +1146,8 @@
 
         // ==================== SAYFA YÜKLENDİĞİNDE ====================
         window.onload = () => {
-            // Tema yükle
             initTheme();
 
-            // LocalStorage'dan veri oku (Eski verileri ASLA silmez veya bozmaz)
             const stored = localStorage.getItem('taksiDB_pro');
             if (stored) {
                 try {
@@ -1182,7 +1161,6 @@
                 }
             }
 
-            // Bugünün ve Bu Ayın Tarihleri
             const today = new Date();
             const todayStr = toISO(today);
             
@@ -1190,10 +1168,7 @@
             document.getElementById('expDate').value = todayStr;
             document.getElementById('advDate').value = todayStr;
 
-            // Varsayılan olarak "Bu Ay" aralığını seç
             setDatePreset('thisMonth');
-
-            // Başlangıçta aktif sekme kontrolü
             switchTab('dashboard');
         };
 
@@ -1215,7 +1190,7 @@
             renderPartnersView();
         }
 
-        // ==================== TEMA DEĞİŞİMİ (GECE / GÜNDÜZ) ====================
+        // ==================== TEMA DEĞİŞİMİ ====================
         function initTheme() {
             const savedTheme = localStorage.getItem('taksi_theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -1264,6 +1239,12 @@
                 end = new Date(today.getFullYear(), 11, 31);
                 document.getElementById('presetBtn-thisYear')?.classList.add('active');
                 document.getElementById('activeFilterBadge').innerText = 'Bu Yıl';
+            } else if (type === 'lastYear') {
+                const prevYear = today.getFullYear() - 1;
+                start = new Date(prevYear, 0, 1);
+                end = new Date(prevYear, 11, 31);
+                document.getElementById('presetBtn-lastYear')?.classList.add('active');
+                document.getElementById('activeFilterBadge').innerText = 'Geçen Yıl';
             } else if (type === 'last30') {
                 start = new Date();
                 start.setDate(today.getDate() - 30);
@@ -1303,7 +1284,7 @@
             return { sDate: s, eDate: e };
         }
 
-        // ==================== TAB SWITCHING (TARİH ARALIĞI SADECE ÖZET, RAPOR VE ORTAKLARDA GÖZÜKÜR) ====================
+        // ==================== TAB SWITCHING ====================
         function switchTab(tabId) {
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.bottom-nav .nav-item').forEach(el => el.classList.remove('active'));
@@ -1317,9 +1298,7 @@
                 navItems[tabMap[tabId]].classList.add('active');
             }
 
-            // TARİH ARALIĞI FİLTRESİ KONTROLÜ:
-            // Sadece Özet (dashboard), Rapor (reports) ve Ortaklar (partners) sekmelerinde görünür;
-            // Gelir Ekle, Gider Ekle ve Ayarlar sekmelerinde tamamen gizlenir.
+            // Sadece Özet, Raporlar ve Ortaklar sekmelerinde tarih filtresi gösterilir
             const filterContainer = document.getElementById('masterDateFilterContainer');
             if (filterContainer) {
                 if (['dashboard', 'reports', 'partners'].includes(tabId)) {
@@ -1341,12 +1320,21 @@
             const labels = {
                 'income': 'Gelirler Raporu',
                 'expense': 'Giderler Raporu',
+                'partners_advances': 'Ortak & Avans Raporu',
                 'summary': 'Aylık Özet Analizi'
             };
             const targetElem = document.getElementById('activeExportTargetName');
             if (targetElem) targetElem.innerText = labels[tabName] || 'Rapor';
             
-            if (tabName === 'summary') generateMonthlySummary();
+            // Sekme butonunu tetikle
+            if (tabName === 'partners_advances') {
+                const btn = document.getElementById('pillBtn-partners_advances');
+                if (btn && !btn.classList.contains('active')) {
+                    new bootstrap.Tab(btn).show();
+                }
+            }
+
+            generateReport();
         }
 
         // ==================== GELİR EKLEME MANTIĞI ====================
@@ -1473,7 +1461,6 @@
             document.getElementById('dashEUR').innerText = fmtEUR(tEUR);
             document.getElementById('dashUnpaid').innerText = fmtTL(tUnpaid);
 
-            // Dashboard Ortak Özeti
             const partners = db.partners || [];
             document.getElementById('dashPartnerCount').innerText = `${partners.length} Kişi`;
 
@@ -1494,7 +1481,6 @@
             tbodyInc.innerHTML = '';
             
             let sums = { cash:0, cc:0, hgs:0, usd:0, eur:0 };
-            
             const filteredIncomes = (db.incomes || [])
                 .filter(i => i.date >= sDate && i.date <= eDate)
                 .sort((a,b) => a.date.localeCompare(b.date));
@@ -1521,22 +1507,29 @@
                     </tr>
                 `;
             });
+
+            // GENEL TOPLAM SATIRI (Tek sefer gösterilir, her sayfada tekrar etmez)
+            tbodyInc.innerHTML += `
+                <tr style="background: var(--bg-surface-soft); font-weight: bold; border-top: 2px solid var(--border-color);">
+                    <td>GENEL TOPLAM</td>
+                    <td class="text-end text-primary">${fmtTL(sums.cash)}</td>
+                    <td class="text-end text-primary">${fmtTL(sums.cc)}</td>
+                    <td class="text-end text-primary">${fmtTL(sums.hgs)}</td>
+                    <td class="text-end text-primary">${fmtUSD(sums.usd)}</td>
+                    <td class="text-end text-primary">${fmtEUR(sums.eur)}</td>
+                    <td></td>
+                </tr>
+            `;
+
             if(filteredIncomes.length === 0) {
                 tbodyInc.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Seçili tarih aralığında gelir kaydı bulunamadı.</td></tr>';
             }
-
-            document.getElementById('totIncCash').innerText = fmtTL(sums.cash);
-            document.getElementById('totIncCC').innerText = fmtTL(sums.cc);
-            document.getElementById('totIncHGS').innerText = fmtTL(sums.hgs);
-            document.getElementById('totIncUSD').innerText = fmtUSD(sums.usd);
-            document.getElementById('totIncEUR').innerText = fmtEUR(sums.eur);
 
             // 2. Gider Tablosu
             const tbodyExp = document.getElementById('reportExpenseTable');
             tbodyExp.innerHTML = '';
             
             let sumExp = 0, sumUnpaid = 0;
-            
             const filteredExpenses = (db.expenses || [])
                 .filter(e => e.date >= sDate && e.date <= eDate)
                 .sort((a,b) => a.date.localeCompare(b.date));
@@ -1563,14 +1556,144 @@
                     </tr>
                 `;
             });
+
+            // GENEL TOPLAM GİDER SATIRI
+            tbodyExp.innerHTML += `
+                <tr style="background: var(--bg-surface-soft); font-weight: bold; border-top: 2px solid var(--border-color);">
+                    <td colspan="2">GENEL TOPLAM GİDER</td>
+                    <td class="text-end text-danger">${fmtTL(sumExp)}</td>
+                    <td colspan="2" class="text-center text-warning small">${sumUnpaid > 0 ? `Borç: ${fmtTL(sumUnpaid)}` : 'Borç Yok'}</td>
+                </tr>
+            `;
+
             if(filteredExpenses.length === 0) {
                 tbodyExp.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Seçili tarih aralığında gider kaydı bulunamadı.</td></tr>';
             }
 
-            document.getElementById('totExpAmount').innerText = fmtTL(sumExp);
-            document.getElementById('totExpUnpaid').innerText = fmtTL(sumUnpaid);
-            
+            // 3. Ortak & Avans Rapor Tablosu
+            renderPartnerReportView();
+
+            // 4. Aylık Özet
             generateMonthlySummary();
+        }
+
+        // ==================== ORTAKLAR & AVANSLAR RAPORU (KİŞİYE ÖZEL / DÖNEMSEL) ====================
+        function renderPartnerReportView() {
+            const { sDate, eDate } = getActiveDateRange();
+            const partners = db.partners || [];
+            const filterSelect = document.getElementById('partnerReportFilterSelect');
+            
+            // Filtre dropdown listesini doldur (Eğer güncellenmesi gerekiyorsa)
+            const currentSelected = filterSelect.value;
+            filterSelect.innerHTML = '<option value="all">👥 Tüm Ortaklar (Genel Dağıtım)</option>';
+            partners.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.innerText = `${p.name} (%${p.share})`;
+                if (p.id == currentSelected) opt.selected = true;
+                filterSelect.appendChild(opt);
+            });
+
+            document.getElementById('partnerReportPeriodText').innerText = `${formatDate(sDate)} - ${formatDate(eDate)}`;
+
+            // Dönem Net Araç Kârı
+            let tInc = 0, tExp = 0;
+            (db.incomes || []).filter(i => i.date >= sDate && i.date <= eDate).forEach(i => tInc += (i.cash + i.cc + i.hgs));
+            (db.expenses || []).filter(e => e.date >= sDate && e.date <= eDate).forEach(e => tExp += e.amount);
+            const netProfit = tInc - tExp;
+
+            // Dönem Avansları
+            const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
+
+            const selectedPartnerId = filterSelect.value;
+            const singleBox = document.getElementById('singlePartnerSummaryBox');
+            const allPartnersView = document.getElementById('allPartnersTableView');
+
+            if (selectedPartnerId !== 'all') {
+                // KİŞİYE ÖZEL GÖRÜNÜM
+                singleBox.classList.remove('d-none');
+                allPartnersView.classList.add('d-none');
+
+                const p = partners.find(x => x.id == selectedPartnerId);
+                if (p) {
+                    const sharePercent = parseFloat(p.share) || 0;
+                    const shareAmount = (netProfit * sharePercent) / 100;
+                    const pAdvances = periodAdvances.filter(a => a.partnerId == p.id);
+                    const pTotalAdv = pAdvances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+                    const balance = shareAmount - pTotalAdv;
+
+                    document.getElementById('spName').innerText = `${p.name} - Hesap Özeti`;
+                    document.getElementById('spShare').innerText = `%${sharePercent} Pay`;
+                    document.getElementById('spEarned').innerText = fmtTL(shareAmount);
+                    document.getElementById('spAdvance').innerText = fmtTL(pTotalAdv);
+                    document.getElementById('spBalance').innerText = `${fmtTL(balance)} ${balance >= 0 ? '(Ödenecek)' : '(Borçlu)'}`;
+                    document.getElementById('spBalance').className = `fs-6 ${balance >= 0 ? 'text-success' : 'text-danger'}`;
+
+                    // Bu ortağın aldığı avansları listele
+                    renderAdvancesTable(pAdvances, p.name);
+                }
+            } else {
+                // TÜM ORTAKLAR GENEL GÖRÜNÜMÜ
+                singleBox.classList.add('d-none');
+                allPartnersView.classList.remove('d-none');
+
+                const pTable = document.getElementById('reportPartnersTable');
+                pTable.innerHTML = '';
+
+                partners.forEach(p => {
+                    const sharePercent = parseFloat(p.share) || 0;
+                    const shareAmount = (netProfit * sharePercent) / 100;
+                    const pAdvances = periodAdvances.filter(a => a.partnerId == p.id);
+                    const pTotalAdv = pAdvances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+                    const balance = shareAmount - pTotalAdv;
+
+                    pTable.innerHTML += `
+                        <tr>
+                            <td><strong>${p.name}</strong></td>
+                            <td class="text-center"><span class="badge-partner-share">%${sharePercent}</span></td>
+                            <td class="text-end fw-bold text-success">${fmtTL(shareAmount)}</td>
+                            <td class="text-end text-danger">${fmtTL(pTotalAdv)}</td>
+                            <td class="text-end fw-bold ${balance>=0?'text-success':'text-danger'}">${fmtTL(balance)}</td>
+                        </tr>
+                    `;
+                });
+
+                if (partners.length === 0) {
+                    pTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-2">Kayıtlı ortak yok.</td></tr>';
+                }
+
+                renderAdvancesTable(periodAdvances);
+            }
+        }
+
+        function renderAdvancesTable(advancesList, specificPartnerName = null) {
+            const advTbody = document.getElementById('reportAdvancesTable');
+            advTbody.innerHTML = '';
+            let total = 0;
+
+            advancesList.sort((a,b) => b.date.localeCompare(a.date)).forEach(adv => {
+                total += (parseFloat(adv.amount) || 0);
+                const p = (db.partners || []).find(x => x.id == adv.partnerId);
+                const pName = specificPartnerName || (p ? p.name : 'Bilinmeyen');
+
+                advTbody.innerHTML += `
+                    <tr>
+                        <td><strong>${formatDate(adv.date)}</strong></td>
+                        <td>${pName}</td>
+                        <td class="text-muted small">${adv.desc || '-'}</td>
+                        <td class="text-end text-danger fw-bold">${fmtTL(adv.amount)}</td>
+                        <td class="text-center">
+                            <i class="fas fa-trash delete-btn" title="Sil" onclick="deleteAdvance(${adv.id})"></i>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('reportAdvancesTotalSum').innerText = `Toplam: ${fmtTL(total)}`;
+
+            if (advancesList.length === 0) {
+                advTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Bu dönemde kayıtlı avans ödemesi bulunamadı.</td></tr>';
+            }
         }
 
         // Aylık Kümülatif Özet
@@ -1579,7 +1702,6 @@
             tbody.innerHTML = '';
             
             let monthlyData = {};
-            
             (db.incomes || []).forEach(i => {
                 let m = i.date.substring(0,7);
                 if(!monthlyData[m]) monthlyData[m] = { inc:0, exp:0, usd:0, eur:0 };
@@ -1587,15 +1709,13 @@
                 monthlyData[m].usd += (i.usd || 0);
                 monthlyData[m].eur += (i.eur || 0);
             });
-            
             (db.expenses || []).forEach(e => {
                 let m = e.date.substring(0,7);
                 if(!monthlyData[m]) monthlyData[m] = { inc:0, exp:0, usd:0, eur:0 };
                 monthlyData[m].exp += e.amount;
             });
-            
             let months = Object.keys(monthlyData).sort().reverse();
-            
+
             months.forEach(m => {
                 let d = monthlyData[m];
                 let net = d.inc - d.exp;
@@ -1618,29 +1738,9 @@
             }
         }
 
-        // ==================== ORTAKLAR, HİSSELER VE AVANS MODÜLÜ ====================
+        // ==================== ORTAKLAR YÖNETİMİ VIEW ====================
         function renderPartnersView() {
             const { sDate, eDate } = getActiveDateRange();
-            
-            // 1. Dönem Araç Gelir ve Giderini Hesapla
-            let tInc = 0, tExp = 0;
-            (db.incomes || []).filter(i => i.date >= sDate && i.date <= eDate).forEach(i => {
-                tInc += (i.cash + i.cc + i.hgs);
-            });
-            (db.expenses || []).filter(e => e.date >= sDate && e.date <= eDate).forEach(e => {
-                tExp += e.amount;
-            });
-            const netProfit = tInc - tExp;
-
-            // 2. Dönem Avanslarını Hesapla
-            const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
-            const totalAdvance = periodAdvances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
-
-            document.getElementById('partnerCalcNetProfit').innerText = fmtTL(netProfit);
-            document.getElementById('partnerCalcTotalAdvance').innerText = fmtTL(totalAdvance);
-            document.getElementById('partnerCalcRemaining').innerText = fmtTL(netProfit - totalAdvance);
-
-            // 3. Ortak Listesi ve Hisse Çubuğu
             const partners = db.partners || [];
             let totalShare = 0;
             partners.forEach(p => totalShare += (parseFloat(p.share) || 0));
@@ -1662,59 +1762,14 @@
                 shareWarningAlert.classList.remove('d-none');
             }
 
-            // 4. Ortaklar Hesaplaşma Tablosu
-            const settlementTbody = document.getElementById('partnerSettlementTable');
-            settlementTbody.innerHTML = '';
-
-            partners.forEach(p => {
-                const sharePercent = parseFloat(p.share) || 0;
-                // Bu ortağın hakedişi = Dönem Net Kârı * (Hisse % / 100)
-                const shareAmount = (netProfit * sharePercent) / 100;
-                
-                // Bu ortağın seçili dönemde aldığı avanslar
-                const pAdvances = periodAdvances.filter(a => a.partnerId == p.id);
-                const pTotalAdv = pAdvances.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
-                
-                // Kalan Ödenecek = Hakediş - Alınan Avans
-                const balance = shareAmount - pTotalAdv;
-
-                let balanceBadge = '';
-                if (balance > 0) {
-                    balanceBadge = `<span class="badge bg-success">${fmtTL(balance)} (Ödenecek)</span>`;
-                } else if (balance < 0) {
-                    balanceBadge = `<span class="badge bg-danger">${fmtTL(Math.abs(balance))} (Fazla Avans)</span>`;
-                } else {
-                    balanceBadge = `<span class="badge bg-secondary">0,00 ₺ (Kapatıldı)</span>`;
-                }
-
-                settlementTbody.innerHTML += `
-                    <tr>
-                        <td><strong>${p.name}</strong></td>
-                        <td class="text-center"><span class="badge-partner-share">%${sharePercent}</span></td>
-                        <td class="text-end fw-bold text-success">${fmtTL(shareAmount)}</td>
-                        <td class="text-end text-danger">${fmtTL(pTotalAdv)}</td>
-                        <td class="text-end">${balanceBadge}</td>
-                        <td class="text-center">
-                            <button class="btn btn-sm btn-outline-warning py-0 px-2" onclick="quickAdvanceForPartner(${p.id})">
-                                + Avans
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            if (partners.length === 0) {
-                settlementTbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Henüz ortak eklenmemiş. Yukarıdaki "Yeni Ortak Ekle" butonuna basarak ortaklarınızı ve hisse yüzdelerini tanımlayabilirsiniz.</td></tr>';
-            }
-
-            // 5. Kayıtlı Ortaklar Yönetim Tablosu
+            // Kayıtlı Ortaklar Tablosu
             const pListTbody = document.getElementById('partnerListTable');
             pListTbody.innerHTML = '';
             partners.forEach(p => {
                 pListTbody.innerHTML += `
                     <tr>
                         <td><strong>${p.name}</strong></td>
-                        <td><span class="badge bg-primary">%${p.share}</span></td>
+                        <td class="text-center"><span class="badge bg-primary">%${p.share}</span></td>
                         <td class="text-muted small">${p.phone || p.note || '-'}</td>
                         <td class="text-center">
                             <i class="fas fa-edit edit-btn me-2" title="Düzenle" onclick="editPartner(${p.id})"></i>
@@ -1725,6 +1780,31 @@
             });
             if (partners.length === 0) {
                 pListTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-2">Kayıtlı ortak yok.</td></tr>';
+            }
+
+            // Avans Geçmişi Tablosu (Sayfa içi)
+            const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate).sort((a,b) => b.date.localeCompare(a.date));
+            const advPageTbody = document.getElementById('advanceHistoryInPageView');
+            advPageTbody.innerHTML = '';
+            document.getElementById('advHistoryCountBadge').innerText = `${periodAdvances.length} Kayıt`;
+
+            periodAdvances.forEach(adv => {
+                const p = partners.find(x => x.id == adv.partnerId);
+                advPageTbody.innerHTML += `
+                    <tr>
+                        <td><strong>${formatDate(adv.date)}</strong></td>
+                        <td>${p ? p.name : 'Bilinmeyen'}</td>
+                        <td class="text-muted small">${adv.desc || '-'}</td>
+                        <td class="text-end text-danger fw-bold">${fmtTL(adv.amount)}</td>
+                        <td class="text-center">
+                            <i class="fas fa-trash delete-btn" title="Sil" onclick="deleteAdvance(${adv.id})"></i>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            if (periodAdvances.length === 0) {
+                advPageTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Seçili dönemde kayıtlı avans ödemesi yok.</td></tr>';
             }
         }
 
@@ -1820,10 +1900,6 @@
             modal.show();
         }
 
-        function quickAdvanceForPartner(partnerId) {
-            openAdvanceModal(partnerId);
-        }
-
         function saveAdvance() {
             const partnerId = parseInt(document.getElementById('advPartnerSelect').value);
             const date = document.getElementById('advDate').value;
@@ -1848,42 +1924,10 @@
             alert("Avans ödemesi başarıyla kaydedildi!");
         }
 
-        function openAdvanceHistoryModal() {
-            const tbody = document.getElementById('advanceHistoryTable');
-            tbody.innerHTML = '';
-            
-            const advances = (db.advances || []).sort((a,b) => b.date.localeCompare(a.date));
-            const partners = db.partners || [];
-
-            advances.forEach(adv => {
-                const p = partners.find(x => x.id === adv.partnerId);
-                const pName = p ? p.name : 'Bilinmeyen Ortak';
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${formatDate(adv.date)}</td>
-                        <td><strong>${pName}</strong></td>
-                        <td class="text-muted small">${adv.desc || '-'}</td>
-                        <td class="text-end fw-bold text-danger">${fmtTL(adv.amount)}</td>
-                        <td class="text-center">
-                            <i class="fas fa-trash delete-btn" title="Avansı Sil" onclick="deleteAdvance(${adv.id})"></i>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            if (advances.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Henüz avans ödemesi yapılmamış.</td></tr>';
-            }
-
-            const modal = new bootstrap.Modal(document.getElementById('advanceHistoryModal'));
-            modal.show();
-        }
-
         function deleteAdvance(id) {
             if (!confirm("Bu avans kaydını silmek istediğinize emin misiniz?")) return;
             db.advances = (db.advances || []).filter(a => a.id !== id);
             saveDataToLocal();
-            openAdvanceHistoryModal();
         }
 
         // ==================== YEDEKLEME VE İÇE AKTAR (JSON) ====================
@@ -1916,7 +1960,6 @@
                 try {
                     const imported = JSON.parse(event.target.result);
                     if (imported && (imported.incomes || imported.expenses)) {
-                        // Mevcut verilerle birleştir veya güncelle, asla çöktürme
                         db.incomes = imported.incomes || [];
                         db.expenses = imported.expenses || [];
                         db.partners = imported.partners || [];
@@ -1950,9 +1993,62 @@
             }
         }
 
-        // ==================== RAPOR HTML ŞABLON ÜRETİCİLERİ ====================
+        // ==================== YAZDIRMA VE PDF ÖNİZLEME MOTORU ====================
+        // GENEL TOPLAM sadece sonda tek sefer çıkar, imza alanı kaldırılmıştır!
+        function openPrintWindow(htmlContent, title) {
+            const printWin = window.open('', '_blank');
+            if (!printWin) {
+                alert("Yazdırma sayfası için lütfen tarayıcınızın açılır pencere (pop-up) engelini kaldırın.");
+                return;
+            }
+            printWin.document.open();
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${title}</title>
+                    <style>
+                        * { box-sizing: border-box; }
+                        body {
+                            font-family: Arial, Helvetica, sans-serif;
+                            color: #0f172a;
+                            background: #ffffff;
+                            margin: 0;
+                            padding: 24px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        @page {
+                            size: A4 portrait;
+                            margin: 12mm 10mm;
+                        }
+                        @media print {
+                            body { padding: 0; }
+                            tr { page-break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${htmlContent}
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                            }, 250);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
 
-        // 1. GİDER RAPORU HTML
+        // ==================== RAPOR ÇIKTI ŞABLONLARI ====================
+
+        // 1. GİDER RAPORU (GENEL TOPLAM SADECE EN SONDA)
         function getExpenseReportHTML() {
             const { sDate, eDate } = getActiveDateRange();
             const filteredExpenses = (db.expenses || [])
@@ -1966,28 +2062,32 @@
                 if (e.isUnpaid) sumUnpaid += e.amount;
                 rowsHtml += `
                     <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 1 ? 'background-color: #f8fafc;' : ''}">
-                        <td style="padding: 9px 10px; font-size: 11px; color: #1e293b; width: 18%;">${formatDate(e.date)}</td>
-                        <td style="padding: 9px 10px; font-size: 11px; color: #1e293b; font-weight: 500; width: 48%;">${e.desc}</td>
-                        <td style="padding: 9px 10px; font-size: 12px; text-align: right; font-weight: bold; color: #b91c1c; width: 20%;">${fmtTL(e.amount)}</td>
-                        <td style="padding: 9px 10px; font-size: 11px; text-align: center; width: 14%;">
-                            ${e.isUnpaid ? '<span style="color:#dc2626; font-weight:bold; background:#fee2e2; padding:3px 8px; border-radius:4px;">Ödenmedi</span>' : '<span style="color:#16a34a; font-weight:bold; background:#dcfce7; padding:3px 8px; border-radius:4px;">Ödendi</span>'}
+                        <td style="padding: 8px 10px; font-size: 11px; width: 18%; color: #1e293b;">${formatDate(e.date)}</td>
+                        <td style="padding: 8px 10px; font-size: 11px; width: 50%; color: #1e293b; font-weight: 500;">${e.desc}</td>
+                        <td style="padding: 8px 10px; font-size: 12px; width: 18%; text-align: right; font-weight: bold; color: #b91c1c;">${fmtTL(e.amount)}</td>
+                        <td style="padding: 8px 10px; font-size: 11px; width: 14%; text-align: center;">
+                            ${e.isUnpaid ? '<span style="color:#dc2626; font-weight:bold;">Ödenmedi</span>' : '<span style="color:#16a34a;">Ödendi</span>'}
                         </td>
                     </tr>
                 `;
             });
 
-            if (filteredExpenses.length === 0) {
-                rowsHtml = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">Seçili tarih aralığında gider kaydı bulunamadı.</td></tr>';
-            }
+            // GENEL TOPLAM SATIRI (Tek sefer en altta)
+            rowsHtml += `
+                <tr style="background: #f1f5f9; font-weight: bold; border-top: 2px solid #0f172a;">
+                    <td colspan="2" style="padding: 10px; font-size: 12px; color: #0f172a;">GENEL TOPLAM GİDER</td>
+                    <td style="padding: 10px; font-size: 13px; text-align: right; color: #dc2626;">${fmtTL(sumExp)}</td>
+                    <td style="padding: 10px; font-size: 11px; text-align: center; color: #d97706;">${sumUnpaid > 0 ? `Borç: ${fmtTL(sumUnpaid)}` : ''}</td>
+                </tr>
+            `;
 
             return `
-                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
-                    <!-- Rapor Başlığı -->
-                    <table style="width: 100%; border-bottom: 3px solid #ef4444; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
+                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%;">
+                    <table style="width: 100%; border-bottom: 3px solid #ef4444; padding-bottom: 10px; margin-bottom: 16px;">
                         <tr>
                             <td style="vertical-align: middle;">
-                                <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 TAKSİ GİDER VE MASRAF RAPORU</h2>
-                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dönem Tarih Aralığı: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
+                                <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 TAKSİ GİDER RAPORU</h2>
+                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dönem: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
                             </td>
                             <td style="text-align: right; vertical-align: middle;">
                                 <span style="display: inline-block; background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">GİDER DÖKÜMÜ</span>
@@ -1996,64 +2096,22 @@
                         </tr>
                     </table>
 
-                    <!-- Özet Kartları -->
-                    <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
-                        <tr>
-                            <td style="width: 33.33%; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px;">
-                                <div style="font-size: 11px; color: #991b1b; font-weight: bold;">TOPLAM GİDER</div>
-                                <div style="font-size: 18px; color: #dc2626; font-weight: bold; margin-top: 2px;">${fmtTL(sumExp)}</div>
-                            </td>
-                            <td style="width: 33.33%; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px;">
-                                <div style="font-size: 11px; color: #92400e; font-weight: bold;">ÖDENMEMİŞ BORÇ TUTARI</div>
-                                <div style="font-size: 18px; color: #d97706; font-weight: bold; margin-top: 2px;">${fmtTL(sumUnpaid)}</div>
-                            </td>
-                            <td style="width: 33.33%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
-                                <div style="font-size: 11px; color: #475569; font-weight: bold;">TOPLAM GİDER KALEMİ</div>
-                                <div style="font-size: 18px; color: #1e293b; font-weight: bold; margin-top: 2px;">${filteredExpenses.length} Adet</div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- Giderler Tablosu -->
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                         <thead>
                             <tr style="background: #1e293b; color: #ffffff;">
                                 <th style="padding: 10px; font-size: 11px; text-align: left; width: 18%;">TARİH</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: left; width: 48%;">GİDER TÜRÜ / AÇIKLAMA</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">TUTAR (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: left; width: 50%;">GİDER TÜRÜ / AÇIKLAMA</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 18%;">TUTAR (₺)</th>
                                 <th style="padding: 10px; font-size: 11px; text-align: center; width: 14%;">DURUM</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            ${rowsHtml}
-                        </tbody>
-                        <tfoot>
-                            <tr style="background: #f1f5f9; font-weight: bold;">
-                                <td colspan="2" style="padding: 10px; font-size: 12px; color: #0f172a;">GENEL TOPLAM GİDER</td>
-                                <td style="padding: 10px; font-size: 13px; text-align: right; color: #dc2626;">${fmtTL(sumExp)}</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-
-                    <!-- İmza & Onay Alanı -->
-                    <table style="width: 100%; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1; border-collapse: collapse;">
-                        <tr>
-                            <td style="width: 50%; text-align: center; vertical-align: top;">
-                                <div style="font-size: 12px; font-weight: bold; color: #475569;">Hesap Yetkilisi</div>
-                                <div style="font-size: 11px; color: #94a3b8; margin-top: 35px;">İmza / Kaşe</div>
-                            </td>
-                            <td style="width: 50%; text-align: center; vertical-align: top;">
-                                <div style="font-size: 12px; font-weight: bold; color: #475569;">Teslim Alan Ortak</div>
-                                <div style="font-size: 11px; color: #94a3b8; margin-top: 35px;">İmza</div>
-                            </td>
-                        </tr>
+                        <tbody>${rowsHtml}</tbody>
                     </table>
                 </div>
             `;
         }
 
-        // 2. GELİR RAPORU HTML
+        // 2. GELİR RAPORU (GENEL TOPLAM SADECE EN SONDA)
         function getIncomeReportHTML() {
             const { sDate, eDate } = getActiveDateRange();
             const filteredIncomes = (db.incomes || [])
@@ -2084,18 +2142,26 @@
                 `;
             });
 
-            if (filteredIncomes.length === 0) {
-                rowsHtml = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">Seçili tarih aralığında gelir kaydı bulunamadı.</td></tr>';
-            }
+            // GENEL TOPLAM SATIRI (Tek sefer en altta)
+            rowsHtml += `
+                <tr style="background: #f1f5f9; font-weight: bold; border-top: 2px solid #0f172a;">
+                    <td style="padding: 10px; font-size: 12px;">GENEL TOPLAM</td>
+                    <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtTL(totCash)}</td>
+                    <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtTL(totCC)}</td>
+                    <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtTL(totHGS)}</td>
+                    <td style="padding: 10px; font-size: 13px; text-align: right; color: #15803d;">${fmtTL(totTotal)}</td>
+                    <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtUSD(totUSD)}</td>
+                    <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtEUR(totEUR)}</td>
+                </tr>
+            `;
 
             return `
-                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
-                    <!-- Rapor Başlığı -->
-                    <table style="width: 100%; border-bottom: 3px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
+                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%;">
+                    <table style="width: 100%; border-bottom: 3px solid #0284c7; padding-bottom: 10px; margin-bottom: 16px;">
                         <tr>
                             <td style="vertical-align: middle;">
                                 <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 TAKSİ GELİR RAPORU</h2>
-                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dönem Tarih Aralığı: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
+                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dönem: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
                             </td>
                             <td style="text-align: right; vertical-align: middle;">
                                 <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">GELİR DÖKÜMÜ</span>
@@ -2104,25 +2170,6 @@
                         </tr>
                     </table>
 
-                    <!-- Özet Kartları -->
-                    <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
-                        <tr>
-                            <td style="width: 33.33%; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px;">
-                                <div style="font-size: 11px; color: #166534; font-weight: bold;">TOPLAM GELİR (TL)</div>
-                                <div style="font-size: 18px; color: #15803d; font-weight: bold; margin-top: 2px;">${fmtTL(totTotal)}</div>
-                            </td>
-                            <td style="width: 33.33%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
-                                <div style="font-size: 11px; color: #475569; font-weight: bold;">TOPLAM DOLAR ($)</div>
-                                <div style="font-size: 18px; color: #0284c7; font-weight: bold; margin-top: 2px;">${fmtUSD(totUSD)}</div>
-                            </td>
-                            <td style="width: 33.33%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
-                                <div style="font-size: 11px; color: #475569; font-weight: bold;">TOPLAM EURO (€)</div>
-                                <div style="font-size: 18px; color: #0284c7; font-weight: bold; margin-top: 2px;">${fmtEUR(totEUR)}</div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- Gelirler Tablosu -->
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                         <thead>
                             <tr style="background: #1e293b; color: #ffffff;">
@@ -2136,137 +2183,149 @@
                             </tr>
                         </thead>
                         <tbody>${rowsHtml}</tbody>
-                        <tfoot>
-                            <tr style="background: #f1f5f9; font-weight: bold;">
-                                <td style="padding: 10px; font-size: 12px;">GENEL TOPLAM</td>
-                                <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtTL(totCash)}</td>
-                                <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtTL(totCC)}</td>
-                                <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtTL(totHGS)}</td>
-                                <td style="padding: 10px; font-size: 13px; text-align: right; color: #15803d;">${fmtTL(totTotal)}</td>
-                                <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtUSD(totUSD)}</td>
-                                <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtEUR(totEUR)}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-
-                    <!-- Onay Alanı -->
-                    <table style="width: 100%; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1; border-collapse: collapse;">
-                        <tr>
-                            <td style="width: 50%; text-align: center; vertical-align: top;">
-                                <div style="font-size: 12px; font-weight: bold; color: #475569;">Hesap Yetkilisi</div>
-                                <div style="font-size: 11px; color: #94a3b8; margin-top: 35px;">İmza / Kaşe</div>
-                            </td>
-                            <td style="width: 50%; text-align: center; vertical-align: top;">
-                                <div style="font-size: 12px; font-weight: bold; color: #475569;">Teslim Alan Ortak</div>
-                                <div style="font-size: 11px; color: #94a3b8; margin-top: 35px;">İmza</div>
-                            </td>
-                        </tr>
                     </table>
                 </div>
             `;
         }
 
-        // 3. ORTAKLAR HESAPLAŞMA HTML
-        function getPartnerReportHTML() {
+        // 3. ORTAKLAR VE AVANSLAR RAPORU (KİŞİYE ÖZEL VEYA TÜMÜ)
+        function getPartnerAndAdvancesReportHTML() {
             const { sDate, eDate } = getActiveDateRange();
             const partners = db.partners || [];
+            const selectedPartnerId = document.getElementById('partnerReportFilterSelect')?.value || 'all';
 
             let tInc = 0, tExp = 0;
             (db.incomes || []).filter(i => i.date >= sDate && i.date <= eDate).forEach(i => tInc += (i.cash + i.cc + i.hgs));
             (db.expenses || []).filter(e => e.date >= sDate && e.date <= eDate).forEach(e => tExp += e.amount);
             const netProfit = tInc - tExp;
             const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
-            const totalAdv = periodAdvances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
 
-            let rowsHtml = '';
-            partners.forEach((p, idx) => {
-                const sharePercent = parseFloat(p.share) || 0;
+            if (selectedPartnerId !== 'all') {
+                // KİŞİYE ÖZEL RAPOR ÇIKTISI
+                const p = partners.find(x => x.id == selectedPartnerId);
+                const sharePercent = parseFloat(p ? p.share : 0);
                 const shareAmount = (netProfit * sharePercent) / 100;
-                const pAdvances = periodAdvances.filter(a => a.partnerId == p.id);
-                const pTotalAdv = pAdvances.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+                const pAdvances = periodAdvances.filter(a => a.partnerId == selectedPartnerId).sort((a,b) => b.date.localeCompare(a.date));
+                const pTotalAdv = pAdvances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
                 const balance = shareAmount - pTotalAdv;
 
-                rowsHtml += `
-                    <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 1 ? 'background-color: #f8fafc;' : ''}">
-                        <td style="padding: 10px 12px; font-size: 12px; font-weight: bold; color: #1e293b; width: 26%;">${p.name}</td>
-                        <td style="padding: 10px 12px; font-size: 12px; text-align: center; color: #4338ca; font-weight: bold; width: 14%;">%${sharePercent}</td>
-                        <td style="padding: 10px 12px; font-size: 12px; text-align: right; color: #15803d; font-weight: bold; width: 20%;">${fmtTL(shareAmount)}</td>
-                        <td style="padding: 10px 12px; font-size: 12px; text-align: right; color: #dc2626; width: 20%;">${fmtTL(pTotalAdv)}</td>
-                        <td style="padding: 10px 12px; font-size: 12px; text-align: right; font-weight: bold; color: ${balance >= 0 ? '#15803d' : '#dc2626'}; width: 20%;">
-                            ${fmtTL(balance)} ${balance >= 0 ? '(Ödenecek)' : '(Borçlu)'}
-                        </td>
-                    </tr>
-                `;
-            });
-
-            if (partners.length === 0) {
-                rowsHtml = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">Kayıtlı ortak bulunamadı.</td></tr>';
-            }
-
-            return `
-                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
-                    <!-- Rapor Başlığı -->
-                    <table style="width: 100%; border-bottom: 3px solid #7c3aed; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
-                        <tr>
-                            <td style="vertical-align: middle;">
-                                <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 ORTAKLAR HESAPLAŞMA & KÂR DAĞITIM RAPORU</h2>
-                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Hesaplaşma Dönemi: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
-                            </td>
-                            <td style="text-align: right; vertical-align: middle;">
-                                <span style="display: inline-block; background: #ede9fe; color: #6d28d9; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">KÂR PAYLAŞIMI</span>
-                                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Tarih: ${formatDate(toISO(new Date()))}</div>
-                            </td>
+                let advRows = '';
+                pAdvances.forEach((adv, idx) => {
+                    advRows += `
+                        <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 1 ? 'background-color: #f8fafc;' : ''}">
+                            <td style="padding: 8px 10px; font-size: 11px; width: 25%;">${formatDate(adv.date)}</td>
+                            <td style="padding: 8px 10px; font-size: 11px; width: 50%;">${adv.desc || 'Avans Ödemesi'}</td>
+                            <td style="padding: 8px 10px; font-size: 12px; width: 25%; text-align: right; font-weight: bold; color: #dc2626;">${fmtTL(adv.amount)}</td>
                         </tr>
-                    </table>
+                    `;
+                });
 
-                    <!-- Özet Kartları -->
-                    <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
-                        <tr>
-                            <td style="width: 33.33%; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px;">
-                                <div style="font-size: 11px; color: #166534; font-weight: bold;">ARAÇ NET KÂRI</div>
-                                <div style="font-size: 18px; color: #15803d; font-weight: bold; margin-top: 2px;">${fmtTL(netProfit)}</div>
-                            </td>
-                            <td style="width: 33.33%; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px;">
-                                <div style="font-size: 11px; color: #991b1b; font-weight: bold;">DAĞITILAN AVANSLAR</div>
-                                <div style="font-size: 18px; color: #dc2626; font-weight: bold; margin-top: 2px;">${fmtTL(totalAdv)}</div>
-                            </td>
-                            <td style="width: 33.33%; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 14px;">
-                                <div style="font-size: 11px; color: #1e40af; font-weight: bold;">KALAN NET DAĞITIM</div>
-                                <div style="font-size: 18px; color: #2563eb; font-weight: bold; margin-top: 2px;">${fmtTL(netProfit - totalAdv)}</div>
-                            </td>
-                        </tr>
-                    </table>
+                if (pAdvances.length === 0) {
+                    advRows = '<tr><td colspan="3" style="text-align: center; padding: 15px; color: #64748b;">Bu dönemde alınan avans bulunmamaktadır.</td></tr>';
+                }
 
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
-                        <thead>
-                            <tr style="background: #1e293b; color: #ffffff;">
-                                <th style="padding: 10px; font-size: 11px; text-align: left; width: 26%;">ORTAK ADI</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: center; width: 14%;">HİSSE</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">HAKEDİŞ (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">ALINAN AVANS (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">KALAN BAKİYE (₺)</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rowsHtml}</tbody>
-                    </table>
-
-                    <!-- Ortak İmzaları -->
-                    <table style="width: 100%; margin-top: 40px; border-collapse: collapse;">
-                        <tr>
-                            ${partners.map(p => `
-                                <td style="text-align: center; vertical-align: top; padding: 0 10px;">
-                                    <div style="font-size: 11px; font-weight: bold; color: #1e293b;">${p.name}</div>
-                                    <div style="font-size: 10px; color: #64748b;">(İmza / Mutabakat)</div>
-                                    <div style="border-bottom: 1px solid #94a3b8; height: 35px; width: 80%; margin: 5px auto 0 auto;"></div>
+                return `
+                    <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%;">
+                        <table style="width: 100%; border-bottom: 3px solid #7c3aed; padding-bottom: 10px; margin-bottom: 16px;">
+                            <tr>
+                                <td style="vertical-align: middle;">
+                                    <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 ORTAK HESAP VE AVANS ÖZETİ</h2>
+                                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Ortak: <strong>${p ? p.name : ''} (%${sharePercent})</strong> | Dönem: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
                                 </td>
-                            `).join('')}
+                                <td style="text-align: right; vertical-align: middle;">
+                                    <span style="display: inline-block; background: #ede9fe; color: #6d28d9; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">HESAP ÖZETİ</span>
+                                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Tarih: ${formatDate(toISO(new Date()))}</div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Özet Kartları -->
+                        <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
+                            <tr>
+                                <td style="width: 33.33%; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px;">
+                                    <div style="font-size: 11px; color: #166534; font-weight: bold;">DÖNEM HAKEDİŞİ (%${sharePercent})</div>
+                                    <div style="font-size: 18px; color: #15803d; font-weight: bold; margin-top: 2px;">${fmtTL(shareAmount)}</div>
+                                </td>
+                                <td style="width: 33.33%; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px;">
+                                    <div style="font-size: 11px; color: #991b1b; font-weight: bold;">ALINAN TOPLAM AVANS</div>
+                                    <div style="font-size: 18px; color: #dc2626; font-weight: bold; margin-top: 2px;">${fmtTL(pTotalAdv)}</div>
+                                </td>
+                                <td style="width: 33.33%; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 14px;">
+                                    <div style="font-size: 11px; color: #1e40af; font-weight: bold;">KALAN NET BAKİYE</div>
+                                    <div style="font-size: 18px; color: ${balance>=0?'#15803d':'#dc2626'}; font-weight: bold; margin-top: 2px;">${fmtTL(balance)}</div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h4 style="font-size: 14px; margin-bottom: 8px; color: #1e293b;">Alınan Avansların Dökümü</h4>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                            <thead>
+                                <tr style="background: #1e293b; color: #ffffff;">
+                                    <th style="padding: 9px 10px; font-size: 11px; text-align: left; width: 25%;">TARİH</th>
+                                    <th style="padding: 9px 10px; font-size: 11px; text-align: left; width: 50%;">AÇIKLAMA</th>
+                                    <th style="padding: 9px 10px; font-size: 11px; text-align: right; width: 25%;">TUTAR (₺)</th>
+                                </tr>
+                            </thead>
+                            <tbody>${advRows}</tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                // TÜM ORTAKLAR GENEL DAĞITIM VE AVANS RAPORU
+                let rowsHtml = '';
+                partners.forEach((p, idx) => {
+                    const sharePercent = parseFloat(p.share) || 0;
+                    const shareAmount = (netProfit * sharePercent) / 100;
+                    const pAdvances = periodAdvances.filter(a => a.partnerId == p.id);
+                    const pTotalAdv = pAdvances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+                    const balance = shareAmount - pTotalAdv;
+
+                    rowsHtml += `
+                        <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 1 ? 'background-color: #f8fafc;' : ''}">
+                            <td style="padding: 9px 10px; font-size: 11px; font-weight: bold; color: #1e293b; width: 28%;">${p.name}</td>
+                            <td style="padding: 9px 10px; font-size: 11px; text-align: center; color: #4338ca; font-weight: bold; width: 12%;">%${sharePercent}</td>
+                            <td style="padding: 9px 10px; font-size: 12px; text-align: right; color: #15803d; font-weight: bold; width: 20%;">${fmtTL(shareAmount)}</td>
+                            <td style="padding: 9px 10px; font-size: 12px; text-align: right; color: #dc2626; width: 20%;">${fmtTL(pTotalAdv)}</td>
+                            <td style="padding: 9px 10px; font-size: 12px; text-align: right; font-weight: bold; color: ${balance >= 0 ? '#15803d' : '#dc2626'}; width: 20%;">
+                                ${fmtTL(balance)} ${balance >= 0 ? '(Ödenecek)' : '(Borçlu)'}
+                            </td>
                         </tr>
-                    </table>
-                </div>
-            `;
+                    `;
+                });
+
+                return `
+                    <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%;">
+                        <table style="width: 100%; border-bottom: 3px solid #7c3aed; padding-bottom: 10px; margin-bottom: 16px;">
+                            <tr>
+                                <td style="vertical-align: middle;">
+                                    <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 ORTAKLAR KÂR DAĞITIM VE HESAPLAŞMA RAPORU</h2>
+                                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dönem: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
+                                </td>
+                                <td style="text-align: right; vertical-align: middle;">
+                                    <span style="display: inline-block; background: #ede9fe; color: #6d28d9; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">KÂR DAĞITIM</span>
+                                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Tarih: ${formatDate(toISO(new Date()))}</div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                            <thead>
+                                <tr style="background: #1e293b; color: #ffffff;">
+                                    <th style="padding: 10px; font-size: 11px; text-align: left; width: 28%;">ORTAK ADI</th>
+                                    <th style="padding: 10px; font-size: 11px; text-align: center; width: 12%;">HİSSE</th>
+                                    <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">HAKEDİŞ (₺)</th>
+                                    <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">ALINAN AVANS (₺)</th>
+                                    <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">KALAN BAKİYE (₺)</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
         }
 
-        // 4. AYLIK ÖZET HTML
+        // 4. AYLIK KÜMÜLATİF ÖZET RAPORU
         function getMonthlySummaryReportHTML() {
             let monthlyData = {};
             (db.incomes || []).forEach(i => {
@@ -2299,13 +2358,9 @@
                 `;
             });
 
-            if (months.length === 0) {
-                rowsHtml = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Henüz özetlenecek veri bulunmuyor.</td></tr>';
-            }
-
             return `
-                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
-                    <table style="width: 100%; border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
+                <div style="font-family: Arial, Helvetica, sans-serif; color: #0f172a; width: 100%;">
+                    <table style="width: 100%; border-bottom: 3px solid #10b981; padding-bottom: 10px; margin-bottom: 16px;">
                         <tr>
                             <td style="vertical-align: middle;">
                                 <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 TAKSİ AYLIK KÂR/ZARAR ÖZET RAPORU</h2>
@@ -2333,167 +2388,25 @@
             `;
         }
 
-        // ==================== YAZDIRMA VE PDF MOTORLARI (HER CİHAZA UYUMLU) ====================
-
-        // 1. DİREKT PDF DOSYASI İNDİR (İzole Iframe ile Kesilmesiz ve Asla Boş Çıkmayan Motor)
-        function renderAndDownloadPDF(htmlContent, fileName) {
-            // Görünmez, bağımsız bir iframe oluşturuyoruz. Bu sayede sayfa kaydırması (scroll) ve mobil dar ekran sıfırlanır!
-            const iframe = document.createElement('iframe');
-            iframe.style.position = 'fixed';
-            iframe.style.left = '0';
-            iframe.style.top = '0';
-            iframe.style.width = '794px';
-            iframe.style.height = '1123px';
-            iframe.style.zIndex = '-99999';
-            iframe.style.opacity = '0.01'; // 0 veya display:none yapmıyoruz ki tarayıcı tam boyutsal render alsın
-            iframe.style.pointerEvents = 'none';
-            iframe.style.border = 'none';
-            document.body.appendChild(iframe);
-
-            const iDoc = iframe.contentWindow.document;
-            iDoc.open();
-            iDoc.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        * { box-sizing: border-box; margin: 0; padding: 0; }
-                        body {
-                            background: #ffffff !important;
-                            color: #0f172a !important;
-                            font-family: Arial, Helvetica, sans-serif;
-                            width: 794px;
-                            padding: 24px;
-                        }
-                        table { width: 100%; border-collapse: collapse; }
-                    </style>
-                </head>
-                <body>
-                    <div id="captureArea">${htmlContent}</div>
-                </body>
-                </html>
-            `);
-            iDoc.close();
-
-            // Iframe'in DOM ve stilleri oturtması için kısa bekleme
-            setTimeout(() => {
-                const target = iDoc.getElementById('captureArea');
-                const opt = {
-                    margin: [8, 8, 8, 8],
-                    filename: fileName,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: {
-                        scale: 2,
-                        useCORS: true,
-                        logging: false,
-                        windowWidth: 794
-                    },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-
-                html2pdf().set(opt).from(target).save().then(() => {
-                    if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-                }).catch(err => {
-                    console.error("PDF hatası:", err);
-                    if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-                    // Mobil tarayıcı doğrudan indirmeye izin vermezse yedek olarak yazdırma penceresini açar
-                    openPrintWindow(htmlContent, fileName);
-                });
-            }, 300);
-        }
-
-        // 2. YAZDIR / PDF OLARAK KAYDET (Tüm cihazlarda %100 kristal netlikte vektörel sistem önizlemesi)
-        function openPrintWindow(htmlContent, title) {
-            const printWin = window.open('', '_blank');
-            if (!printWin) {
-                // Eğer pop-up engellendiyse kullanıcıyı bilgilendir
-                alert("Yazdırma sayfası için lütfen tarayıcınızın açılır pencere (pop-up) engelini kaldırın veya 'PDF İndir' butonunu kullanın.");
-                return;
-            }
-            printWin.document.open();
-            printWin.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>${title}</title>
-                    <style>
-                        * { box-sizing: border-box; }
-                        body {
-                            font-family: Arial, Helvetica, sans-serif;
-                            color: #0f172a;
-                            background: #ffffff;
-                            margin: 0;
-                            padding: 20px;
-                        }
-                        table { width: 100%; border-collapse: collapse; }
-                        @page {
-                            size: A4 portrait;
-                            margin: 10mm;
-                        }
-                        @media print {
-                            body { padding: 0; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${htmlContent}
-                    <script>
-                        window.onload = function() {
-                            setTimeout(function() {
-                                window.print();
-                            }, 300);
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWin.document.close();
-        }
-
         // ==================== BUTON TETİKLEYİCİLERİ ====================
 
-        // AKTİF SEKME PDF İNDİR
-        function exportActiveTabPDF() {
-            const { sDate, eDate } = getActiveDateRange();
-            if (currentReportTab === 'expense') {
-                const html = getExpenseReportHTML();
-                renderAndDownloadPDF(html, `Taksi_Gider_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
-            } else if (currentReportTab === 'income') {
-                const html = getIncomeReportHTML();
-                renderAndDownloadPDF(html, `Taksi_Gelir_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
-            } else {
-                const html = getMonthlySummaryReportHTML();
-                renderAndDownloadPDF(html, `Taksi_Aylik_Ozet_${toISO(new Date())}.pdf`);
-            }
-        }
-
-        // AKTİF SEKME YAZDIR / PDF ÖNİZLE
+        // AKTİF SEKME YAZDIR / PDF OLARAK KAYDET
         function printActiveTab() {
             const { sDate, eDate } = getActiveDateRange();
             if (currentReportTab === 'expense') {
                 openPrintWindow(getExpenseReportHTML(), `Taksi Gider Raporu (${formatDate(sDate)} - ${formatDate(eDate)})`);
             } else if (currentReportTab === 'income') {
                 openPrintWindow(getIncomeReportHTML(), `Taksi Gelir Raporu (${formatDate(sDate)} - ${formatDate(eDate)})`);
+            } else if (currentReportTab === 'partners_advances') {
+                openPrintWindow(getPartnerAndAdvancesReportHTML(), `Ortaklar ve Avans Hesap Özeti`);
             } else {
                 openPrintWindow(getMonthlySummaryReportHTML(), `Taksi Aylık Özet Raporu`);
             }
         }
 
-        // ORTAKLAR PDF İNDİR
-        function exportPartnerPDF() {
-            const { sDate, eDate } = getActiveDateRange();
-            if ((db.partners || []).length === 0) return alert("Kayıtlı ortak bulunmamaktadır!");
-            const html = getPartnerReportHTML();
-            renderAndDownloadPDF(html, `Taksi_Ortak_Dagitim_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
-        }
-
-        // ORTAKLAR YAZDIR
+        // ORTAKLAR SEKME BUTONLARI
         function printPartnerReport() {
-            const { sDate, eDate } = getActiveDateRange();
-            if ((db.partners || []).length === 0) return alert("Kayıtlı ortak bulunmamaktadır!");
-            openPrintWindow(getPartnerReportHTML(), `Ortaklar Hesaplaşma Raporu (${formatDate(sDate)} - ${formatDate(eDate)})`);
+            openPrintWindow(getPartnerAndAdvancesReportHTML(), `Ortaklar Kâr Dağıtım ve Avans Raporu`);
         }
 
         // ==================== EXCEL ÇIKTILARI ====================
@@ -2502,6 +2415,8 @@
                 exportExpenseOnlyExcel();
             } else if (currentReportTab === 'income') {
                 exportIncomeOnlyExcel();
+            } else if (currentReportTab === 'partners_advances') {
+                exportPartnerExcel();
             } else {
                 exportSummaryOnlyExcel();
             }
@@ -2630,27 +2545,56 @@
             const netProfit = tInc - tExp;
             const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
 
-            const partnerData = partners.map(p => {
-                const sharePercent = parseFloat(p.share) || 0;
-                const shareAmount = (netProfit * sharePercent) / 100;
-                const pAdvances = periodAdvances.filter(a => a.partnerId == p.id);
-                const pTotalAdv = pAdvances.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
-                const balance = shareAmount - pTotalAdv;
-
-                return {
-                    'Ortak Adı': p.name,
-                    'Hisse Oranı (%)': `%${sharePercent}`,
-                    'Dönem Hakedişi (₺)': shareAmount,
-                    'Alınan Avans (₺)': pTotalAdv,
-                    'Kalan Ödenecek / Durum (₺)': balance,
-                    'Durum Açıklaması': balance >= 0 ? 'Ödenecek' : 'Fazla Avans Aldı'
-                };
-            });
+            const selectedPartnerId = document.getElementById('partnerReportFilterSelect')?.value || 'all';
 
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(partnerData);
-            XLSX.utils.book_append_sheet(wb, ws, "Ortak Hesaplaşma");
-            XLSX.writeFile(wb, `Taksi_Ortak_Kâr_Dagitim_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
+
+            if (selectedPartnerId !== 'all') {
+                const p = partners.find(x => x.id == selectedPartnerId);
+                const sharePercent = parseFloat(p ? p.share : 0);
+                const shareAmount = (netProfit * sharePercent) / 100;
+                const pAdvances = periodAdvances.filter(a => a.partnerId == selectedPartnerId);
+                const pTotalAdv = pAdvances.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+
+                const pData = pAdvances.map(a => ({
+                    'Tarih': formatDate(a.date),
+                    'Ortak': p ? p.name : '',
+                    'Açıklama': a.desc,
+                    'Avans Tutarı (₺)': a.amount
+                }));
+
+                pData.push({
+                    'Tarih': 'ÖZET',
+                    'Ortak': `Hisse: %${sharePercent}`,
+                    'Açıklama': `Hakediş: ${fmtTL(shareAmount)} - Avans: ${fmtTL(pTotalAdv)}`,
+                    'Avans Tutarı (₺)': shareAmount - pTotalAdv
+                });
+
+                const ws = XLSX.utils.json_to_sheet(pData.length ? pData : [{ Bilgi: "Kayıt Yok" }]);
+                XLSX.utils.book_append_sheet(wb, ws, `${p ? p.name : 'Ortak'}_Avans`);
+                XLSX.writeFile(wb, `Taksi_Avans_${p ? p.name : 'Ortak'}_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
+            } else {
+                const partnerData = partners.map(p => {
+                    const sharePercent = parseFloat(p.share) || 0;
+                    const shareAmount = (netProfit * sharePercent) / 100;
+                    const pAdvances = periodAdvances.filter(a => a.partnerId == p.id);
+                    const pTotalAdv = pAdvances.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+                    const balance = shareAmount - pTotalAdv;
+
+                    return {
+                        'Ortak Adı': p.name,
+                        'Hisse Oranı (%)': `%${sharePercent}`,
+                        'Dönem Hakedişi (₺)': shareAmount,
+                        'Alınan Avans (₺)': pTotalAdv,
+                        'Kalan Ödenecek / Durum (₺)': balance,
+                        'Durum Açıklaması': balance >= 0 ? 'Ödenecek' : 'Fazla Avans Aldı'
+                    };
+                });
+
+                const ws = XLSX.utils.json_to_sheet(partnerData);
+                XLSX.utils.book_append_sheet(wb, ws, "Ortak Hesaplaşma");
+                XLSX.writeFile(wb, `Taksi_Ortak_Kâr_Dagitim_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
+            }
         }
 
         function exportCompleteReportModal() {
