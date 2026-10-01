@@ -737,35 +737,47 @@
             XLSX.writeFile(wb, `Taksi_Rapor_${sDate}_${eDate}.xlsx`);
         }
 
-        // --- EXPORT TO PDF (PDF DÜZELTMESİ BURADA) ---
+        // --- EXPORT TO PDF (GÜNCELLENEN VE TAM DÜZELTİLEN KISIM) ---
         function exportToPDF() {
             const element = document.getElementById('reportContainer');
             
-            // Tabloların scroll barını kaldırıp yüksekliğini otomatik yapıyoruz (Eksik tablo çıkmaması için)
+            // 1. Orijinal stilleri kaydediyoruz
+            const originalWidth = element.style.width;
+            
+            // 2. Tablo taşmasını (scroll) önleyen Bootstrap sınıfını geçici olarak siliyoruz
             const responsiveTables = element.querySelectorAll('.table-responsive');
             responsiveTables.forEach(el => {
-                el.style.overflow = 'visible';
-                el.style.height = 'auto';
+                el.classList.remove('table-responsive');
             });
             
-            // Sil butonlarını PDF'te gizle
+            // 3. Sil butonlarını gizle
             const deleteBtns = document.querySelectorAll('.delete-btn');
             deleteBtns.forEach(el => el.style.display = 'none');
             
-            // Dikey (portrait) A4 ayarı ve kenar boşluğu eklentisi (Boş ilk sayfa sorununu çözer)
+            // 4. Konteynırı genişleterek dar ekranlarda sıkışmasını engelliyoruz
+            element.style.width = '800px';
+            element.style.maxWidth = 'none';
+
+            // 5. PDF Motoru Ayarları (scrollX ve scrollY boş sayfa/eksik tablo kaymasını önler)
             const opt = {
                 margin:       10, 
                 filename:     `Taksi_Rapor_${document.getElementById('repStartDate').value}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, windowWidth: 800 }, 
+                html2canvas:  { 
+                    scale: 2, 
+                    scrollX: 0, // Ekran kaydırmasından kaynaklanan "sol taraf beyazlığı"nı düzeltir
+                    scrollY: 0, 
+                    windowWidth: 800 
+                },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' } 
             };
             
             html2pdf().set(opt).from(element).save().then(() => {
-                // İşlem bitince mobil görünüme geri dön
+                // 6. İşlem bitince her şeyi eski mobil/dar görünümüne geri döndür
+                element.style.width = originalWidth;
+                element.style.maxWidth = '';
                 responsiveTables.forEach(el => {
-                    el.style.overflow = 'auto';
-                    el.style.height = '';
+                    el.classList.add('table-responsive');
                 });
                 deleteBtns.forEach(el => el.style.display = 'inline-block');
             });
