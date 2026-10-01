@@ -202,12 +202,15 @@
         .bg-partner { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); }
 
         /* Unified Date Filter Card */
+        #masterDateFilterContainer {
+            transition: all 0.25s ease;
+        }
         .master-date-filter {
             background-color: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: 14px;
             padding: 14px;
-            margin-bottom: 16px;
+            margin-bottom: 4px;
             box-shadow: var(--card-shadow);
         }
         .filter-presets {
@@ -446,13 +449,22 @@
             border-top: 1px solid var(--border-color);
         }
 
-        /* Print / Professional PDF Container */
+        /* Print / Professional PDF Container (Sabit A4 genişliği: 794px, tam merkezli ve offset hatasız) */
         #pdfExportPreview {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 794px;
+            min-width: 794px;
+            max-width: 794px;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            z-index: 999999;
+            box-sizing: border-box;
+            padding: 24px 28px;
             display: none;
-            background: #ffffff;
-            color: #000000;
-            padding: 24px;
-            font-family: 'Inter', Arial, sans-serif;
+            pointer-events: none;
+            box-shadow: none;
         }
 
         @media print {
@@ -461,7 +473,7 @@
                 color: #000000 !important;
                 padding-bottom: 0 !important;
             }
-            .navbar-custom, .bottom-nav, .master-date-filter, .filter-presets, 
+            .navbar-custom, .bottom-nav, #masterDateFilterContainer, .filter-presets, 
             .action-btn, .export-card, .delete-btn, .edit-btn, .nav-pills {
                 display: none !important;
             }
@@ -495,8 +507,8 @@
         </div>
     </nav>
 
-    <!-- UNIFIED MASTER DATE FILTER (Tek Merkezli Senkron Tarih Aralığı) -->
-    <div class="container-fluid px-3 pt-3" style="max-width: 900px;">
+    <!-- UNIFIED MASTER DATE FILTER (SADECE Özet, Raporlar ve Ortaklar Sekmelerinde Gözükür) -->
+    <div id="masterDateFilterContainer" class="container-fluid px-3 pt-3" style="max-width: 900px;">
         <div class="master-date-filter">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="fw-bold small d-flex align-items-center gap-2">
@@ -951,7 +963,7 @@
         <div class="export-card">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="fw-bold small"><i class="fas fa-file-download me-1 text-primary"></i>Rapor Çıktısı Al</span>
-                <span class="badge bg-light text-dark border" id="activeExportTargetName">Giderler Raporu</span>
+                <span class="badge bg-light text-dark border" id="activeExportTargetName">Gelirler Raporu</span>
             </div>
             
             <div class="row g-2">
@@ -1127,7 +1139,7 @@
         </div>
     </div>
 
-    <!-- GİZLİ YAZDIRMA VE TEMİZ PDF OLUŞTURMA ALANI -->
+    <!-- GİZLİ YAZDIRMA VE TEMİZ PDF OLUŞTURMA ALANI (Tam A4 794px genişlikte renderlanır) -->
     <div id="pdfExportPreview"></div>
 
     <!-- BOTTOM NAVIGATION -->
@@ -1212,6 +1224,9 @@
 
             // Varsayılan olarak "Bu Ay" aralığını seç
             setDatePreset('thisMonth');
+
+            // Başlangıçta aktif sekme kontrolü
+            switchTab('dashboard');
         };
 
         function toISO(d) {
@@ -1320,7 +1335,7 @@
             return { sDate: s, eDate: e };
         }
 
-        // ==================== TAB SWITCHING ====================
+        // ==================== TAB SWITCHING (TARİH ARALIĞI SADECE ÖZET, RAPOR VE ORTAKLARDA GÖZÜKÜR) ====================
         function switchTab(tabId) {
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.bottom-nav .nav-item').forEach(el => el.classList.remove('active'));
@@ -1332,6 +1347,18 @@
             const tabMap = { 'dashboard': 0, 'addIncome': 1, 'addExpense': 2, 'partners': 3, 'reports': 4, 'settings': 5 };
             if (tabMap[tabId] !== undefined && navItems[tabMap[tabId]]) {
                 navItems[tabMap[tabId]].classList.add('active');
+            }
+
+            // TARİH ARALIĞI FİLTRESİ KONTROLÜ:
+            // Sadece Özet (dashboard), Rapor (reports) ve Ortaklar (partners) sekmelerinde görünür;
+            // Gelir Ekle, Gider Ekle ve Ayarlar sekmelerinde tamamen gizlenir.
+            const filterContainer = document.getElementById('masterDateFilterContainer');
+            if (filterContainer) {
+                if (['dashboard', 'reports', 'partners'].includes(tabId)) {
+                    filterContainer.style.display = 'block';
+                } else {
+                    filterContainer.style.display = 'none';
+                }
             }
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1957,7 +1984,7 @@
 
         // ==================== PROFESYONEL VE HEDEF ODAKLI ÇIKTI SİSTEMİ ====================
 
-        // 1. EXCEL ÇIKTILARI (Aktif Sekmeye Göre veya Özel Seçim)
+        // 1. EXCEL ÇIKTILARI (Aktif Sekmeye Göre)
         function exportActiveTabExcel() {
             if (currentReportTab === 'expense') {
                 exportExpenseOnlyExcel();
@@ -2183,7 +2210,7 @@
         }
 
         // ==================== PROFESYONEL VE HATASIZ PDF ÇIKTI SİSTEMİ ====================
-        // html2pdf için temiz, beyaz arka planlı, sayfa yapısı tam A4 uyumlu doküman oluşturucu
+        // Aktif sekmeye göre tam sayfa A4 uyumlu döküman oluşturur
         function exportActiveTabPDF() {
             if (currentReportTab === 'expense') {
                 exportExpenseOnlyPDF();
@@ -2194,7 +2221,7 @@
             }
         }
 
-        // 1. SADECE GİDER PDF RAPORU (Kullanıcının tam istediği profesyonel gider dökümü)
+        // 1. SADECE GİDER PDF RAPORU
         function exportExpenseOnlyPDF() {
             const { sDate, eDate } = getActiveDateRange();
             const filteredExpenses = (db.expenses || [])
@@ -2212,54 +2239,58 @@
                 if (e.isUnpaid) sumUnpaid += e.amount;
                 rowsHtml += `
                     <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 1 ? 'background-color: #f8fafc;' : ''}">
-                        <td style="padding: 8px 10px; font-size: 12px; color: #1e293b;">${formatDate(e.date)}</td>
-                        <td style="padding: 8px 10px; font-size: 12px; color: #1e293b; font-weight: 500;">${e.desc}</td>
-                        <td style="padding: 8px 10px; font-size: 12px; text-align: right; font-weight: bold; color: #b91c1c;">${fmtTL(e.amount)}</td>
-                        <td style="padding: 8px 10px; font-size: 11px; text-align: center;">
-                            ${e.isUnpaid ? '<span style="color:#dc2626; font-weight:bold;">Ödenmedi</span>' : '<span style="color:#16a34a;">Ödendi</span>'}
+                        <td style="padding: 9px 10px; font-size: 11px; color: #1e293b; width: 18%;">${formatDate(e.date)}</td>
+                        <td style="padding: 9px 10px; font-size: 11px; color: #1e293b; font-weight: 500; width: 48%;">${e.desc}</td>
+                        <td style="padding: 9px 10px; font-size: 12px; text-align: right; font-weight: bold; color: #b91c1c; width: 20%;">${fmtTL(e.amount)}</td>
+                        <td style="padding: 9px 10px; font-size: 11px; text-align: center; width: 14%;">
+                            ${e.isUnpaid ? '<span style="color:#dc2626; font-weight:bold; background:#fee2e2; padding:3px 8px; border-radius:4px;">Ödenmedi</span>' : '<span style="color:#16a34a; font-weight:bold; background:#dcfce7; padding:3px 8px; border-radius:4px;">Ödendi</span>'}
                         </td>
                     </tr>
                 `;
             });
 
             const html = `
-                <div style="font-family: Arial, sans-serif; color: #0f172a; padding: 20px; background: #ffffff;">
+                <div style="font-family: Arial, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
                     <!-- Rapor Başlığı -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #f59e0b; padding-bottom: 12px; margin-bottom: 16px;">
-                        <div>
-                            <h2 style="margin: 0; font-size: 20px; color: #1e293b; font-weight: bold;">🚕 TAKSİ GİDER VE MASRAF RAPORU</h2>
-                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dönem Tarih Aralığı: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="display: inline-block; background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">GİDER DÖKÜMÜ</span>
-                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Rapor Tarihi: ${formatDate(toISO(new Date()))}</div>
-                        </div>
-                    </div>
+                    <table style="width: 100%; border-bottom: 3px solid #ef4444; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
+                        <tr>
+                            <td style="vertical-align: middle;">
+                                <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 TAKSİ GİDER VE MASRAF RAPORU</h2>
+                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dönem Tarih Aralığı: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
+                            </td>
+                            <td style="text-align: right; vertical-align: middle;">
+                                <span style="display: inline-block; background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">GİDER DÖKÜMÜ</span>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Rapor Tarihi: ${formatDate(toISO(new Date()))}</div>
+                            </td>
+                        </tr>
+                    </table>
 
-                    <!-- Özet Kartları -->
-                    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-                        <div style="flex: 1; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px;">
-                            <div style="font-size: 11px; color: #991b1b; font-weight: bold;">TOPLAM GİDER</div>
-                            <div style="font-size: 18px; color: #dc2626; font-weight: bold; margin-top: 2px;">${fmtTL(sumExp)}</div>
-                        </div>
-                        <div style="flex: 1; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px;">
-                            <div style="font-size: 11px; color: #92400e; font-weight: bold;">ÖDENMEMİŞ BORÇ TUTARI</div>
-                            <div style="font-size: 18px; color: #d97706; font-weight: bold; margin-top: 2px;">${fmtTL(sumUnpaid)}</div>
-                        </div>
-                        <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
-                            <div style="font-size: 11px; color: #475569; font-weight: bold;">TOPLAM GİDER KALEMİ</div>
-                            <div style="font-size: 18px; color: #1e293b; font-weight: bold; margin-top: 2px;">${filteredExpenses.length} Adet</div>
-                        </div>
-                    </div>
+                    <!-- Özet Kartları (Table formatında tam uyumlu) -->
+                    <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
+                        <tr>
+                            <td style="width: 33.33%; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px;">
+                                <div style="font-size: 11px; color: #991b1b; font-weight: bold;">TOPLAM GİDER</div>
+                                <div style="font-size: 18px; color: #dc2626; font-weight: bold; margin-top: 2px;">${fmtTL(sumExp)}</div>
+                            </td>
+                            <td style="width: 33.33%; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px;">
+                                <div style="font-size: 11px; color: #92400e; font-weight: bold;">ÖDENMEMİŞ BORÇ TUTARI</div>
+                                <div style="font-size: 18px; color: #d97706; font-weight: bold; margin-top: 2px;">${fmtTL(sumUnpaid)}</div>
+                            </td>
+                            <td style="width: 33.33%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
+                                <div style="font-size: 11px; color: #475569; font-weight: bold;">TOPLAM GİDER KALEMİ</div>
+                                <div style="font-size: 18px; color: #1e293b; font-weight: bold; margin-top: 2px;">${filteredExpenses.length} Adet</div>
+                            </td>
+                        </tr>
+                    </table>
 
                     <!-- Giderler Tablosu -->
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                         <thead>
                             <tr style="background: #1e293b; color: #ffffff;">
-                                <th style="padding: 10px; font-size: 11px; text-align: left; border-radius: 6px 0 0 0;">TARİH</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: left;">GİDER TÜRÜ / AÇIKLAMA</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">TUTAR (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: center; border-radius: 0 6px 0 0;">DURUM</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: left; width: 18%;">TARİH</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: left; width: 48%;">GİDER TÜRÜ / AÇIKLAMA</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">TUTAR (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: center; width: 14%;">DURUM</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2267,7 +2298,7 @@
                         </tbody>
                         <tfoot>
                             <tr style="background: #f1f5f9; font-weight: bold;">
-                                <td colspan="2" style="padding: 10px; font-size: 12px; color: #0f172a;">GENEL TOPLAM</td>
+                                <td colspan="2" style="padding: 10px; font-size: 12px; color: #0f172a;">GENEL TOPLAM GİDER</td>
                                 <td style="padding: 10px; font-size: 13px; text-align: right; color: #dc2626;">${fmtTL(sumExp)}</td>
                                 <td></td>
                             </tr>
@@ -2275,30 +2306,32 @@
                     </table>
 
                     <!-- İmza & Onay Alanı -->
-                    <div style="display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1;">
-                        <div style="text-align: center; width: 200px;">
-                            <div style="font-size: 12px; font-weight: bold; color: #475569;">Hesap Yetkilisi</div>
-                            <div style="font-size: 11px; color: #94a3b8; margin-top: 40px;">İmza / Kaşe</div>
-                        </div>
-                        <div style="text-align: center; width: 200px;">
-                            <div style="font-size: 12px; font-weight: bold; color: #475569;">Teslim Alan Ortak</div>
-                            <div style="font-size: 11px; color: #94a3b8; margin-top: 40px;">İmza</div>
-                        </div>
-                    </div>
+                    <table style="width: 100%; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1; border-collapse: collapse;">
+                        <tr>
+                            <td style="width: 50%; text-align: center; vertical-align: top;">
+                                <div style="font-size: 12px; font-weight: bold; color: #475569;">Hesap Yetkilisi</div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 35px;">İmza / Kaşe</div>
+                            </td>
+                            <td style="width: 50%; text-align: center; vertical-align: top;">
+                                <div style="font-size: 12px; font-weight: bold; color: #475569;">Teslim Alan Ortak</div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 35px;">İmza</div>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             `;
 
             renderAndDownloadPDF(html, `Taksi_Gider_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.pdf`);
         }
 
-        // 2. SADECE GELİR PDF RAPORU
+        // 2. SADECE GELİR PDF RAPORU (Kusursuz A4 Tablo Yapısı)
         function exportIncomeOnlyPDF() {
             const { sDate, eDate } = getActiveDateRange();
             const filteredIncomes = (db.incomes || [])
                 .filter(i => i.date >= sDate && i.date <= eDate)
                 .sort((a,b) => a.date.localeCompare(b.date));
 
-            if (filteredIncomes.length === 0) return alert("Seçili aralıkta gelir kaydı yok!");
+            if (filteredIncomes.length === 0) return alert("Seçili aralıkta PDF olarak çıkarılacak gelir kaydı yok!");
 
             let totCash = 0, totCC = 0, totHGS = 0, totTotal = 0, totUSD = 0, totEUR = 0;
             let rowsHtml = '';
@@ -2313,61 +2346,68 @@
 
                 rowsHtml += `
                     <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 1 ? 'background-color: #f8fafc;' : ''}">
-                        <td style="padding: 8px 10px; font-size: 12px;">${formatDate(i.date)}</td>
-                        <td style="padding: 8px 10px; font-size: 12px; text-align: right;">${fmtTL(i.cash)}</td>
-                        <td style="padding: 8px 10px; font-size: 12px; text-align: right;">${fmtTL(i.cc)}</td>
-                        <td style="padding: 8px 10px; font-size: 12px; text-align: right;">${fmtTL(i.hgs)}</td>
-                        <td style="padding: 8px 10px; font-size: 12px; text-align: right; font-weight: bold; color: #0284c7;">${fmtTL(dayTotal)}</td>
-                        <td style="padding: 8px 10px; font-size: 12px; text-align: right;">${i.usd > 0 ? fmtUSD(i.usd) : '-'}</td>
-                        <td style="padding: 8px 10px; font-size: 12px; text-align: right;">${i.eur > 0 ? fmtEUR(i.eur) : '-'}</td>
+                        <td style="padding: 8px 10px; font-size: 11px; width: 16%; color:#1e293b;">${formatDate(i.date)}</td>
+                        <td style="padding: 8px 10px; font-size: 11px; text-align: right; width: 16%;">${fmtTL(i.cash)}</td>
+                        <td style="padding: 8px 10px; font-size: 11px; text-align: right; width: 16%;">${fmtTL(i.cc)}</td>
+                        <td style="padding: 8px 10px; font-size: 11px; text-align: right; width: 14%;">${fmtTL(i.hgs)}</td>
+                        <td style="padding: 8px 10px; font-size: 12px; text-align: right; font-weight: bold; color: #0284c7; width: 18%;">${fmtTL(dayTotal)}</td>
+                        <td style="padding: 8px 10px; font-size: 11px; text-align: right; width: 10%;">${i.usd > 0 ? fmtUSD(i.usd) : '-'}</td>
+                        <td style="padding: 8px 10px; font-size: 11px; text-align: right; width: 10%;">${i.eur > 0 ? fmtEUR(i.eur) : '-'}</td>
                     </tr>
                 `;
             });
 
             const html = `
-                <div style="font-family: Arial, sans-serif; color: #0f172a; padding: 20px; background: #ffffff;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px;">
-                        <div>
-                            <h2 style="margin: 0; font-size: 20px; color: #1e293b; font-weight: bold;">🚕 TAKSİ GELİR RAPORU</h2>
-                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dönem: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">GELİR DÖKÜMÜ</span>
-                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Rapor Tarihi: ${formatDate(toISO(new Date()))}</div>
-                        </div>
-                    </div>
+                <div style="font-family: Arial, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
+                    <!-- Rapor Başlığı -->
+                    <table style="width: 100%; border-bottom: 3px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
+                        <tr>
+                            <td style="vertical-align: middle;">
+                                <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 TAKSİ GELİR RAPORU</h2>
+                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dönem Tarih Aralığı: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
+                            </td>
+                            <td style="text-align: right; vertical-align: middle;">
+                                <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">GELİR DÖKÜMÜ</span>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Rapor Tarihi: ${formatDate(toISO(new Date()))}</div>
+                            </td>
+                        </tr>
+                    </table>
 
-                    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-                        <div style="flex: 1; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px;">
-                            <div style="font-size: 11px; color: #166534; font-weight: bold;">TOPLAM GELİR (TL)</div>
-                            <div style="font-size: 18px; color: #15803d; font-weight: bold; margin-top: 2px;">${fmtTL(totTotal)}</div>
-                        </div>
-                        <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
-                            <div style="font-size: 11px; color: #475569; font-weight: bold;">TOPLAM DOLAR ($)</div>
-                            <div style="font-size: 18px; color: #0284c7; font-weight: bold; margin-top: 2px;">${fmtUSD(totUSD)}</div>
-                        </div>
-                        <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
-                            <div style="font-size: 11px; color: #475569; font-weight: bold;">TOPLAM EURO (€)</div>
-                            <div style="font-size: 18px; color: #0284c7; font-weight: bold; margin-top: 2px;">${fmtEUR(totEUR)}</div>
-                        </div>
-                    </div>
+                    <!-- Özet Kartları (Table formatında) -->
+                    <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
+                        <tr>
+                            <td style="width: 33.33%; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px;">
+                                <div style="font-size: 11px; color: #166534; font-weight: bold;">TOPLAM GELİR (TL)</div>
+                                <div style="font-size: 18px; color: #15803d; font-weight: bold; margin-top: 2px;">${fmtTL(totTotal)}</div>
+                            </td>
+                            <td style="width: 33.33%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
+                                <div style="font-size: 11px; color: #475569; font-weight: bold;">TOPLAM DOLAR ($)</div>
+                                <div style="font-size: 18px; color: #0284c7; font-weight: bold; margin-top: 2px;">${fmtUSD(totUSD)}</div>
+                            </td>
+                            <td style="width: 33.33%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
+                                <div style="font-size: 11px; color: #475569; font-weight: bold;">TOPLAM EURO (€)</div>
+                                <div style="font-size: 18px; color: #0284c7; font-weight: bold; margin-top: 2px;">${fmtEUR(totEUR)}</div>
+                            </td>
+                        </tr>
+                    </table>
 
+                    <!-- Gelirler Tablosu (Tam %100 Genişlik) -->
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                         <thead>
                             <tr style="background: #1e293b; color: #ffffff;">
-                                <th style="padding: 10px; font-size: 11px; text-align: left;">TARİH</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">NAKİT (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">K. KARTI (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">HGS (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">TOPLAM (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">DOLAR</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">EURO</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: left; width: 16%;">TARİH</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 16%;">NAKİT (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 16%;">K. KARTI (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 14%;">HGS (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 18%;">TOPLAM (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 10%;">DOLAR</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 10%;">EURO</th>
                             </tr>
                         </thead>
                         <tbody>${rowsHtml}</tbody>
                         <tfoot>
                             <tr style="background: #f1f5f9; font-weight: bold;">
-                                <td style="padding: 10px; font-size: 12px;">TOPLAM</td>
+                                <td style="padding: 10px; font-size: 12px;">GENEL TOPLAM</td>
                                 <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtTL(totCash)}</td>
                                 <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtTL(totCC)}</td>
                                 <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtTL(totHGS)}</td>
@@ -2376,6 +2416,20 @@
                                 <td style="padding: 10px; font-size: 12px; text-align: right;">${fmtEUR(totEUR)}</td>
                             </tr>
                         </tfoot>
+                    </table>
+
+                    <!-- Onay Alanı -->
+                    <table style="width: 100%; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1; border-collapse: collapse;">
+                        <tr>
+                            <td style="width: 50%; text-align: center; vertical-align: top;">
+                                <div style="font-size: 12px; font-weight: bold; color: #475569;">Hesap Yetkilisi</div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 35px;">İmza / Kaşe</div>
+                            </td>
+                            <td style="width: 50%; text-align: center; vertical-align: top;">
+                                <div style="font-size: 12px; font-weight: bold; color: #475569;">Teslim Alan Ortak</div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 35px;">İmza</div>
+                            </td>
+                        </tr>
                     </table>
                 </div>
             `;
@@ -2394,7 +2448,7 @@
             (db.expenses || []).filter(e => e.date >= sDate && e.date <= eDate).forEach(e => tExp += e.amount);
             const netProfit = tInc - tExp;
             const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
-            const totalAdv = periodAdvances.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+            const totalAdv = periodAdvances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
 
             let rowsHtml = '';
             partners.forEach((p, idx) => {
@@ -2406,11 +2460,11 @@
 
                 rowsHtml += `
                     <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 1 ? 'background-color: #f8fafc;' : ''}">
-                        <td style="padding: 9px 12px; font-size: 12px; font-weight: bold; color: #1e293b;">${p.name}</td>
-                        <td style="padding: 9px 12px; font-size: 12px; text-align: center; color: #4338ca; font-weight: bold;">%${sharePercent}</td>
-                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; color: #15803d; font-weight: bold;">${fmtTL(shareAmount)}</td>
-                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; color: #dc2626;">${fmtTL(pTotalAdv)}</td>
-                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; font-weight: bold; color: ${balance >= 0 ? '#15803d' : '#dc2626'};">
+                        <td style="padding: 10px 12px; font-size: 12px; font-weight: bold; color: #1e293b; width: 26%;">${p.name}</td>
+                        <td style="padding: 10px 12px; font-size: 12px; text-align: center; color: #4338ca; font-weight: bold; width: 14%;">%${sharePercent}</td>
+                        <td style="padding: 10px 12px; font-size: 12px; text-align: right; color: #15803d; font-weight: bold; width: 20%;">${fmtTL(shareAmount)}</td>
+                        <td style="padding: 10px 12px; font-size: 12px; text-align: right; color: #dc2626; width: 20%;">${fmtTL(pTotalAdv)}</td>
+                        <td style="padding: 10px 12px; font-size: 12px; text-align: right; font-weight: bold; color: ${balance >= 0 ? '#15803d' : '#dc2626'}; width: 20%;">
                             ${fmtTL(balance)} ${balance >= 0 ? '(Ödenecek)' : '(Borçlu)'}
                         </td>
                     </tr>
@@ -2418,55 +2472,64 @@
             });
 
             const html = `
-                <div style="font-family: Arial, sans-serif; color: #0f172a; padding: 20px; background: #ffffff;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #7c3aed; padding-bottom: 12px; margin-bottom: 16px;">
-                        <div>
-                            <h2 style="margin: 0; font-size: 20px; color: #1e293b; font-weight: bold;">🚕 ORTAKLAR HESAPLAŞMA & KÂR DAĞITIM RAPORU</h2>
-                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Hesaplaşma Dönemi: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="display: inline-block; background: #ede9fe; color: #6d28d9; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">KÂR PAYLAŞIMI</span>
-                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Tarih: ${formatDate(toISO(new Date()))}</div>
-                        </div>
-                    </div>
+                <div style="font-family: Arial, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
+                    <!-- Rapor Başlığı -->
+                    <table style="width: 100%; border-bottom: 3px solid #7c3aed; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
+                        <tr>
+                            <td style="vertical-align: middle;">
+                                <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 ORTAKLAR HESAPLAŞMA & KÂR DAĞITIM RAPORU</h2>
+                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Hesaplaşma Dönemi: <strong>${formatDate(sDate)} - ${formatDate(eDate)}</strong></p>
+                            </td>
+                            <td style="text-align: right; vertical-align: middle;">
+                                <span style="display: inline-block; background: #ede9fe; color: #6d28d9; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">KÂR PAYLAŞIMI</span>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Tarih: ${formatDate(toISO(new Date()))}</div>
+                            </td>
+                        </tr>
+                    </table>
 
-                    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-                        <div style="flex: 1; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px;">
-                            <div style="font-size: 11px; color: #166534; font-weight: bold;">ARAÇ NET KÂRI</div>
-                            <div style="font-size: 18px; color: #15803d; font-weight: bold; margin-top: 2px;">${fmtTL(netProfit)}</div>
-                        </div>
-                        <div style="flex: 1; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px;">
-                            <div style="font-size: 11px; color: #991b1b; font-weight: bold;">DAĞITILAN AVANSLAR</div>
-                            <div style="font-size: 18px; color: #dc2626; font-weight: bold; margin-top: 2px;">${fmtTL(totalAdv)}</div>
-                        </div>
-                        <div style="flex: 1; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 14px;">
-                            <div style="font-size: 11px; color: #1e40af; font-weight: bold;">KALAN NET DAĞITIM</div>
-                            <div style="font-size: 18px; color: #2563eb; font-weight: bold; margin-top: 2px;">${fmtTL(netProfit - totalAdv)}</div>
-                        </div>
-                    </div>
+                    <!-- Özet Kartları -->
+                    <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
+                        <tr>
+                            <td style="width: 33.33%; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px;">
+                                <div style="font-size: 11px; color: #166534; font-weight: bold;">ARAÇ NET KÂRI</div>
+                                <div style="font-size: 18px; color: #15803d; font-weight: bold; margin-top: 2px;">${fmtTL(netProfit)}</div>
+                            </td>
+                            <td style="width: 33.33%; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px;">
+                                <div style="font-size: 11px; color: #991b1b; font-weight: bold;">DAĞITILAN AVANSLAR</div>
+                                <div style="font-size: 18px; color: #dc2626; font-weight: bold; margin-top: 2px;">${fmtTL(totalAdv)}</div>
+                            </td>
+                            <td style="width: 33.33%; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 14px;">
+                                <div style="font-size: 11px; color: #1e40af; font-weight: bold;">KALAN NET DAĞITIM</div>
+                                <div style="font-size: 18px; color: #2563eb; font-weight: bold; margin-top: 2px;">${fmtTL(netProfit - totalAdv)}</div>
+                            </td>
+                        </tr>
+                    </table>
 
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
                         <thead>
                             <tr style="background: #1e293b; color: #ffffff;">
-                                <th style="padding: 10px; font-size: 11px; text-align: left;">ORTAK ADI</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: center;">HİSSE</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">HAKEDİŞ (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">ALINAN AVANS (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">KALAN BAKİYE (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: left; width: 26%;">ORTAK ADI</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: center; width: 14%;">HİSSE</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">HAKEDİŞ (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">ALINAN AVANS (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">KALAN BAKİYE (₺)</th>
                             </tr>
                         </thead>
                         <tbody>${rowsHtml}</tbody>
                     </table>
 
-                    <div style="margin-top: 50px; display: flex; justify-content: space-around;">
-                        ${partners.map(p => `
-                            <div style="text-align: center; width: 140px;">
-                                <div style="font-size: 11px; font-weight: bold; color: #1e293b;">${p.name}</div>
-                                <div style="font-size: 10px; color: #64748b;">(İmza / Mutabakat)</div>
-                                <div style="border-bottom: 1px solid #94a3b8; height: 35px; width: 100%; margin-top: 5px;"></div>
-                            </div>
-                        `).join('')}
-                    </div>
+                    <!-- Ortak İmzaları -->
+                    <table style="width: 100%; margin-top: 40px; border-collapse: collapse;">
+                        <tr>
+                            ${partners.map(p => `
+                                <td style="text-align: center; vertical-align: top; padding: 0 10px;">
+                                    <div style="font-size: 11px; font-weight: bold; color: #1e293b;">${p.name}</div>
+                                    <div style="font-size: 10px; color: #64748b;">(İmza / Mutabakat)</div>
+                                    <div style="border-bottom: 1px solid #94a3b8; height: 35px; width: 80%; margin: 5px auto 0 auto;"></div>
+                                </td>
+                            `).join('')}
+                        </tr>
+                    </table>
                 </div>
             `;
 
@@ -2497,36 +2560,38 @@
                 let net = d.inc - d.exp;
                 rowsHtml += `
                     <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 1 ? 'background-color: #f8fafc;' : ''}">
-                        <td style="padding: 9px 12px; font-size: 12px; font-weight: bold;">${m.split('-')[1]} / ${m.split('-')[0]}</td>
-                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; color: #16a34a;">${fmtTL(d.inc)}</td>
-                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; color: #dc2626;">${fmtTL(d.exp)}</td>
-                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; font-weight: bold; color: ${net>=0?'#0284c7':'#dc2626'};">${fmtTL(net)}</td>
-                        <td style="padding: 9px 12px; font-size: 12px; text-align: right;">${d.usd > 0 ? fmtUSD(d.usd) : '-'}</td>
-                        <td style="padding: 9px 12px; font-size: 12px; text-align: right;">${d.eur > 0 ? fmtEUR(d.eur) : '-'}</td>
+                        <td style="padding: 9px 12px; font-size: 12px; font-weight: bold; width: 22%;">${m.split('-')[1]} / ${m.split('-')[0]}</td>
+                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; color: #16a34a; width: 20%;">${fmtTL(d.inc)}</td>
+                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; color: #dc2626; width: 20%;">${fmtTL(d.exp)}</td>
+                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; font-weight: bold; color: ${net>=0?'#0284c7':'#dc2626'}; width: 22%;">${fmtTL(net)}</td>
+                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; width: 8%;">${d.usd > 0 ? fmtUSD(d.usd) : '-'}</td>
+                        <td style="padding: 9px 12px; font-size: 12px; text-align: right; width: 8%;">${d.eur > 0 ? fmtEUR(d.eur) : '-'}</td>
                     </tr>
                 `;
             });
 
             const html = `
-                <div style="font-family: Arial, sans-serif; color: #0f172a; padding: 20px; background: #ffffff;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 16px;">
-                        <div>
-                            <h2 style="margin: 0; font-size: 20px; color: #1e293b; font-weight: bold;">🚕 TAKSİ AYLIK KÂR/ZARAR ÖZET RAPORU</h2>
-                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Genel Aylık Kümülatif Analiz</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 11px; color: #94a3b8;">Tarih: ${formatDate(toISO(new Date()))}</div>
-                        </div>
-                    </div>
+                <div style="font-family: Arial, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; background: #ffffff;">
+                    <table style="width: 100%; border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 16px; border-collapse: collapse;">
+                        <tr>
+                            <td style="vertical-align: middle;">
+                                <h2 style="margin: 0; font-size: 19px; color: #1e293b; font-weight: bold;">🚕 TAKSİ AYLIK KÂR/ZARAR ÖZET RAPORU</h2>
+                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Genel Aylık Kümülatif Analiz</p>
+                            </td>
+                            <td style="text-align: right; vertical-align: middle;">
+                                <div style="font-size: 11px; color: #94a3b8;">Tarih: ${formatDate(toISO(new Date()))}</div>
+                            </td>
+                        </tr>
+                    </table>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                         <thead>
                             <tr style="background: #1e293b; color: #ffffff;">
-                                <th style="padding: 10px; font-size: 11px; text-align: left;">AY / YIL</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">GELİR (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">GİDER (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">NET KÂR (₺)</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">DOLAR</th>
-                                <th style="padding: 10px; font-size: 11px; text-align: right;">EURO</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: left; width: 22%;">AY / YIL</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">GELİR (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 20%;">GİDER (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 22%;">NET KÂR (₺)</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 8%;">DOLAR</th>
+                                <th style="padding: 10px; font-size: 11px; text-align: right; width: 8%;">EURO</th>
                             </tr>
                         </thead>
                         <tbody>${rowsHtml}</tbody>
@@ -2537,22 +2602,30 @@
             renderAndDownloadPDF(html, `Taksi_Aylik_Ozet_${toISO(new Date())}.pdf`);
         }
 
-        // html2pdf Engine Çalıştırıcı
+        // ==================== HTML2PDF MOTOR ÇALIŞTIRICI ====================
+        // Ekran kaydırmasından, dar mobil ekranlardan veya offsetten kaynaklanan kesilmeyi %100 önler
         function renderAndDownloadPDF(htmlContent, fileName) {
             const container = document.getElementById('pdfExportPreview');
             container.innerHTML = htmlContent;
             container.style.display = 'block';
 
+            // Geçici olarak sayfayı en üste alıyoruz ki html2canvas sıfır noktasından kayıpsız çekim yapsın
+            const prevScrollX = window.scrollX || window.pageXOffset || 0;
+            const prevScrollY = window.scrollY || window.pageYOffset || 0;
+            window.scrollTo(0, 0);
+
             const opt = {
-                margin: [10, 10, 10, 10],
+                margin: [8, 8, 8, 8],
                 filename: fileName,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
                     useCORS: true, 
-                    scrollY: 0,
                     scrollX: 0,
-                    windowWidth: 850
+                    scrollY: 0,
+                    width: 794,
+                    windowWidth: 794,
+                    logging: false
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
@@ -2560,9 +2633,12 @@
             html2pdf().set(opt).from(container).save().then(() => {
                 container.style.display = 'none';
                 container.innerHTML = '';
+                window.scrollTo(prevScrollX, prevScrollY);
             }).catch(err => {
                 console.error("PDF oluşturma hatası:", err);
                 container.style.display = 'none';
+                container.innerHTML = '';
+                window.scrollTo(prevScrollX, prevScrollY);
                 alert("PDF oluşturulurken bir sorun oluştu.");
             });
         }
