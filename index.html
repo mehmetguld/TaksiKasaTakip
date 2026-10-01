@@ -748,7 +748,7 @@
                                 <th>Ortak</th>
                                 <th>Açıklama</th>
                                 <th class="text-end">Tutar (₺)</th>
-                                <th class="text-center">Sil</th>
+                                <th class="text-center">İşlem</th>
                             </tr>
                         </thead>
                         <tbody id="advanceHistoryInPageView"></tbody>
@@ -906,7 +906,7 @@
                                                 <th>Ortak</th>
                                                 <th>Açıklama</th>
                                                 <th class="text-end">Tutar (₺)</th>
-                                                <th class="text-center">Sil</th>
+                                                <th class="text-center">İşlem</th>
                                             </tr>
                                         </thead>
                                         <tbody id="reportAdvancesTable"></tbody>
@@ -959,11 +959,6 @@
                 <div class="col-6">
                     <button class="btn btn-success action-btn w-100" onclick="exportActiveTabExcel()" title="Excel Tablosu İndir">
                         <i class="fas fa-file-excel"></i>Excel İndir
-                    </button>
-                </div>
-                <div class="col-12 mt-1">
-                    <button class="btn btn-outline-secondary action-btn w-100 btn-sm" onclick="exportCompleteReportModal()">
-                        <i class="fas fa-layer-group me-1"></i>Tüm Raporları Birleşik İndir (Gelir + Gider + Ortaklar)
                     </button>
                 </div>
             </div>
@@ -1052,16 +1047,17 @@
         </div>
     </div>
 
-    <!-- Avans Ekle Modal -->
+    <!-- Avans Ekle / Düzenle Modal -->
     <div class="modal fade" id="advanceModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Avans Ödemesi Kaydet</h5>
+                    <h5 class="modal-title fw-bold" id="advModalTitle">Avans Ödemesi Kaydet</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
                 </div>
                 <div class="modal-body">
                     <form id="advanceForm">
+                        <input type="hidden" id="advEditId" value="">
                         <div class="mb-3">
                             <label class="form-label">Ortak Seçin</label>
                             <select id="advPartnerSelect" class="form-select" required></select>
@@ -1085,7 +1081,115 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">İptal</button>
-                    <button type="button" class="btn btn-warning btn-sm fw-bold" onclick="saveAdvance()">Avansı Kaydet</button>
+                    <button type="button" class="btn btn-warning btn-sm fw-bold" id="advSubmitBtn" onclick="saveAdvance()">Avansı Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gelir Düzenle Modal -->
+    <div class="modal fade" id="editIncomeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-primary"><i class="fas fa-edit me-2"></i>Gelir Kaydını Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editIncomeForm">
+                        <input type="hidden" id="editIncId" value="">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Tarih (Gün / Ay / Yıl)</label>
+                            <input type="date" id="editIncDate" class="form-control" required>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label small">Nakit Gelir (₺)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₺</span>
+                                    <input type="number" id="editIncCash" class="form-control" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label small">Kredi Kartı / POS (₺)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-credit-card"></i></span>
+                                    <input type="number" id="editIncCC" class="form-control" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small">HGS / Köprü (₺)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₺</span>
+                                    <input type="number" id="editIncHGS" class="form-control" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small">Dolar ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" id="editIncUSD" class="form-control" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small">Euro (€)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="number" id="editIncEUR" class="form-control" min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary btn-sm fw-bold" onclick="updateIncome()">
+                        <i class="fas fa-save me-1"></i>Değişiklikleri Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gider Düzenle Modal -->
+    <div class="modal fade" id="editExpenseModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="fas fa-edit me-2"></i>Gider Kaydını Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editExpenseForm">
+                        <input type="hidden" id="editExpId" value="">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Tarih (Gün / Ay / Yıl)</label>
+                            <input type="date" id="editExpDate" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Gider Türü / Açıklaması</label>
+                            <input type="text" id="editExpDesc" class="form-control" placeholder="Örn: Mazot, Yağ, Tamir..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Tutar (₺)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₺</span>
+                                <input type="number" id="editExpAmount" class="form-control" required min="0.01" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="form-check form-switch p-3 rounded border" style="background: var(--bg-surface-soft);">
+                            <input class="form-check-input ms-0 me-2" type="checkbox" id="editExpUnpaid" style="width: 2.2em; height: 1.15em;">
+                            <label class="form-check-label text-danger fw-bold ms-2" for="editExpUnpaid" style="padding-top: 2px;">
+                                Bu Gider Henüz Ödenmedi (Borç Olarak Kaydet)
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-danger btn-sm fw-bold" onclick="updateExpense()">
+                        <i class="fas fa-save me-1"></i>Değişiklikleri Kaydet
+                    </button>
                 </div>
             </div>
         </div>
@@ -1407,6 +1511,94 @@
             alert("Gider başarıyla kaydedildi!");
         }
 
+        // ==================== GELİR DÜZENLEME ====================
+        function openEditIncomeModal(id) {
+            const inc = (db.incomes || []).find(i => i.id === id);
+            if (!inc) return alert("Gelir kaydı bulunamadı!");
+
+            document.getElementById('editIncId').value = inc.id;
+            document.getElementById('editIncDate').value = inc.date || '';
+            document.getElementById('editIncCash').value = inc.cash ?? 0;
+            document.getElementById('editIncCC').value = inc.cc ?? 0;
+            document.getElementById('editIncHGS').value = inc.hgs ?? 0;
+            document.getElementById('editIncUSD').value = inc.usd ?? 0;
+            document.getElementById('editIncEUR').value = inc.eur ?? 0;
+
+            const modal = new bootstrap.Modal(document.getElementById('editIncomeModal'));
+            modal.show();
+        }
+
+        function updateIncome() {
+            const id = parseInt(document.getElementById('editIncId').value);
+            const date = document.getElementById('editIncDate').value;
+            if (!date) return alert("Lütfen tarih seçin!");
+
+            const cash = parseFloat(document.getElementById('editIncCash').value) || 0;
+            const cc   = parseFloat(document.getElementById('editIncCC').value) || 0;
+            const hgs  = parseFloat(document.getElementById('editIncHGS').value) || 0;
+            const usd  = parseFloat(document.getElementById('editIncUSD').value) || 0;
+            const eur  = parseFloat(document.getElementById('editIncEUR').value) || 0;
+
+            if (cash === 0 && cc === 0 && usd === 0 && eur === 0 && hgs === 0) {
+                return alert("Lütfen en az bir gelir türüne tutar girin.");
+            }
+
+            const inc = (db.incomes || []).find(i => i.id === id);
+            if (!inc) return alert("Gelir kaydı bulunamadı!");
+
+            inc.date = date;
+            inc.cash = cash;
+            inc.cc = cc;
+            inc.hgs = hgs;
+            inc.usd = usd;
+            inc.eur = eur;
+
+            saveDataToLocal();
+            const modalEl = document.getElementById('editIncomeModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+
+        // ==================== GİDER DÜZENLEME ====================
+        function openEditExpenseModal(id) {
+            const exp = (db.expenses || []).find(e => e.id === id);
+            if (!exp) return alert("Gider kaydı bulunamadı!");
+
+            document.getElementById('editExpId').value = exp.id;
+            document.getElementById('editExpDate').value = exp.date || '';
+            document.getElementById('editExpDesc').value = exp.desc || '';
+            document.getElementById('editExpAmount').value = exp.amount || '';
+            document.getElementById('editExpUnpaid').checked = !!exp.isUnpaid;
+
+            const modal = new bootstrap.Modal(document.getElementById('editExpenseModal'));
+            modal.show();
+        }
+
+        function updateExpense() {
+            const id = parseInt(document.getElementById('editExpId').value);
+            const date = document.getElementById('editExpDate').value;
+            const desc = document.getElementById('editExpDesc').value.trim();
+            const amount = parseFloat(document.getElementById('editExpAmount').value) || 0;
+            const isUnpaid = document.getElementById('editExpUnpaid').checked;
+
+            if (!date || !desc || amount <= 0) {
+                return alert("Lütfen tarih, açıklama ve geçerli bir tutar girin!");
+            }
+
+            const exp = (db.expenses || []).find(e => e.id === id);
+            if (!exp) return alert("Gider kaydı bulunamadı!");
+
+            exp.date = date;
+            exp.desc = desc;
+            exp.amount = amount;
+            exp.isUnpaid = isUnpaid;
+
+            saveDataToLocal();
+            const modalEl = document.getElementById('editExpenseModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+
         function deleteRecord(type, id) {
             if(!confirm("Bu kaydı tamamen silmek istediğinize emin misiniz?")) return;
             if(type === 'income') {
@@ -1502,6 +1694,7 @@
                         <td class="text-end text-primary">${i.usd > 0 ? fmtUSD(i.usd) : '-'}</td>
                         <td class="text-end text-primary">${i.eur > 0 ? fmtEUR(i.eur) : '-'}</td>
                         <td class="text-center">
+                            <i class="fas fa-edit edit-btn me-2" title="Düzenle" onclick="openEditIncomeModal(${i.id})"></i>
                             <i class="fas fa-trash delete-btn" title="Sil" onclick="deleteRecord('income', ${i.id})"></i>
                         </td>
                     </tr>
@@ -1551,6 +1744,7 @@
                         <td class="text-end fw-bold text-danger">${fmtTL(e.amount)}</td>
                         <td class="text-center">${statusBadge}</td>
                         <td class="text-center">
+                            <i class="fas fa-edit edit-btn me-2" title="Düzenle" onclick="openEditExpenseModal(${e.id})"></i>
                             <i class="fas fa-trash delete-btn" title="Sil" onclick="deleteRecord('expense', ${e.id})"></i>
                         </td>
                     </tr>
@@ -1683,6 +1877,7 @@
                         <td class="text-muted small">${adv.desc || '-'}</td>
                         <td class="text-end text-danger fw-bold">${fmtTL(adv.amount)}</td>
                         <td class="text-center">
+                            <i class="fas fa-edit edit-btn me-2" title="Düzenle" onclick="openAdvanceModal(null, ${adv.id})"></i>
                             <i class="fas fa-trash delete-btn" title="Sil" onclick="deleteAdvance(${adv.id})"></i>
                         </td>
                     </tr>
@@ -1797,6 +1992,7 @@
                         <td class="text-muted small">${adv.desc || '-'}</td>
                         <td class="text-end text-danger fw-bold">${fmtTL(adv.amount)}</td>
                         <td class="text-center">
+                            <i class="fas fa-edit edit-btn me-2" title="Düzenle" onclick="openAdvanceModal(null, ${adv.id})"></i>
                             <i class="fas fa-trash delete-btn" title="Sil" onclick="deleteAdvance(${adv.id})"></i>
                         </td>
                     </tr>
@@ -1875,8 +2071,8 @@
             saveDataToLocal();
         }
 
-        // Avans Modal ve Kayıt
-        function openAdvanceModal(preselectedPartnerId = null) {
+        // Avans Modal ve Kayıt / Düzenleme
+        function openAdvanceModal(preselectedPartnerId = null, editId = null) {
             const partners = db.partners || [];
             if (partners.length === 0) {
                 return alert("Önce en az 1 ortak eklemelisiniz!");
@@ -1888,19 +2084,38 @@
                 const opt = document.createElement('option');
                 opt.value = p.id;
                 opt.innerText = `${p.name} (Hisse: %${p.share})`;
-                if (preselectedPartnerId && p.id === preselectedPartnerId) opt.selected = true;
                 select.appendChild(opt);
             });
 
-            document.getElementById('advDate').value = toISO(new Date());
-            document.getElementById('advAmount').value = '';
-            document.getElementById('advDesc').value = '';
+            const titleElem = document.getElementById('advModalTitle');
+            const submitBtn = document.getElementById('advSubmitBtn');
+
+            if (editId) {
+                const adv = (db.advances || []).find(a => a.id === editId);
+                if (!adv) return alert("Avans kaydı bulunamadı!");
+                document.getElementById('advEditId').value = adv.id;
+                select.value = adv.partnerId;
+                document.getElementById('advDate').value = adv.date || '';
+                document.getElementById('advAmount').value = adv.amount || '';
+                document.getElementById('advDesc').value = adv.desc || '';
+                if (titleElem) titleElem.innerText = 'Avans Kaydını Düzenle';
+                if (submitBtn) submitBtn.innerText = 'Değişiklikleri Kaydet';
+            } else {
+                document.getElementById('advEditId').value = '';
+                if (preselectedPartnerId) select.value = preselectedPartnerId;
+                document.getElementById('advDate').value = toISO(new Date());
+                document.getElementById('advAmount').value = '';
+                document.getElementById('advDesc').value = '';
+                if (titleElem) titleElem.innerText = 'Avans Ödemesi Kaydet';
+                if (submitBtn) submitBtn.innerText = 'Avansı Kaydet';
+            }
 
             const modal = new bootstrap.Modal(document.getElementById('advanceModal'));
             modal.show();
         }
 
         function saveAdvance() {
+            const editId = document.getElementById('advEditId').value;
             const partnerId = parseInt(document.getElementById('advPartnerSelect').value);
             const date = document.getElementById('advDate').value;
             const amount = parseFloat(document.getElementById('advAmount').value);
@@ -1911,17 +2126,29 @@
             }
 
             db.advances = db.advances || [];
-            db.advances.push({
-                id: Date.now(),
-                partnerId: partnerId,
-                date: date,
-                amount: amount,
-                desc: desc || 'Avans Ödemesi'
-            });
+
+            if (editId) {
+                const adv = db.advances.find(a => a.id == editId);
+                if (adv) {
+                    adv.partnerId = partnerId;
+                    adv.date = date;
+                    adv.amount = amount;
+                    adv.desc = desc || 'Avans Ödemesi';
+                }
+            } else {
+                db.advances.push({
+                    id: Date.now(),
+                    partnerId: partnerId,
+                    date: date,
+                    amount: amount,
+                    desc: desc || 'Avans Ödemesi'
+                });
+            }
 
             saveDataToLocal();
-            bootstrap.Modal.getInstance(document.getElementById('advanceModal')).hide();
-            alert("Avans ödemesi başarıyla kaydedildi!");
+            const modalEl = document.getElementById('advanceModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
         }
 
         function deleteAdvance(id) {
@@ -2595,60 +2822,6 @@
                 XLSX.utils.book_append_sheet(wb, ws, "Ortak Hesaplaşma");
                 XLSX.writeFile(wb, `Taksi_Ortak_Kâr_Dagitim_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
             }
-        }
-
-        function exportCompleteReportModal() {
-            const { sDate, eDate } = getActiveDateRange();
-            const wb = XLSX.utils.book_new();
-
-            const filteredIncomes = (db.incomes || []).filter(i => i.date >= sDate && i.date <= eDate);
-            const incData = filteredIncomes.map(i => ({
-                'Tarih': formatDate(i.date),
-                'Nakit (₺)': i.cash,
-                'Kredi Kartı (₺)': i.cc,
-                'HGS (₺)': i.hgs,
-                'Toplam (₺)': (i.cash + i.cc + i.hgs),
-                'Dolar ($)': i.usd,
-                'Euro (€)': i.eur
-            }));
-            const wsInc = XLSX.utils.json_to_sheet(incData.length ? incData : [{ Bilgi: "Kayıt Yok" }]);
-            XLSX.utils.book_append_sheet(wb, wsInc, "Gelir Dökümü");
-
-            const filteredExpenses = (db.expenses || []).filter(e => e.date >= sDate && e.date <= eDate);
-            const expData = filteredExpenses.map(e => ({
-                'Tarih': formatDate(e.date),
-                'Gider Türü': e.desc,
-                'Tutar (₺)': e.amount,
-                'Durum': e.isUnpaid ? 'Ödenmedi' : 'Ödendi'
-            }));
-            const wsExp = XLSX.utils.json_to_sheet(expData.length ? expData : [{ Bilgi: "Kayıt Yok" }]);
-            XLSX.utils.book_append_sheet(wb, wsExp, "Gider Dökümü");
-
-            const partners = db.partners || [];
-            if (partners.length > 0) {
-                let tInc = 0, tExp = 0;
-                filteredIncomes.forEach(i => tInc += (i.cash + i.cc + i.hgs));
-                filteredExpenses.forEach(e => tExp += e.amount);
-                const netProfit = tInc - tExp;
-                const periodAdvances = (db.advances || []).filter(a => a.date >= sDate && a.date <= eDate);
-
-                const partnerData = partners.map(p => {
-                    const sharePercent = parseFloat(p.share) || 0;
-                    const shareAmount = (netProfit * sharePercent) / 100;
-                    const pTotalAdv = periodAdvances.filter(a => a.partnerId == p.id).reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
-                    return {
-                        'Ortak': p.name,
-                        'Hisse': `%${sharePercent}`,
-                        'Hakediş (₺)': shareAmount,
-                        'Alınan Avans (₺)': pTotalAdv,
-                        'Kalan Ödenecek (₺)': shareAmount - pTotalAdv
-                    };
-                });
-                const wsPart = XLSX.utils.json_to_sheet(partnerData);
-                XLSX.utils.book_append_sheet(wb, wsPart, "Ortak Dağıtım");
-            }
-
-            XLSX.writeFile(wb, `Taksi_Tam_Kasa_Raporu_${formatDate(sDate)}_${formatDate(eDate)}.xlsx`);
         }
     </script>
 </body>
