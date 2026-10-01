@@ -381,7 +381,7 @@
 
     <!-- Main Logic -->
     <script>
-        // Initialize Data
+        // Initialize Data (BU YAPIYA DOKUNULMADI, VERİLER GÜVENDE)
         let db = {
             incomes: [],
             expenses: []
@@ -458,9 +458,7 @@
                 existingInc.usd += c_usd;
                 existingInc.eur += c_eur;
                 existingInc.hgs += c_hgs;
-                alert(`Mevcut güne ait gelirler toplandı!
-
-Yeni Toplam Nakit: ${existingInc.cash}₺`);
+                alert(`Mevcut güne ait gelirler toplandı!\n\nYeni Toplam Nakit: ${existingInc.cash}₺`);
             } else {
                 // Create New
                 db.incomes.push({
@@ -754,27 +752,40 @@ Yeni Toplam Nakit: ${existingInc.cash}₺`);
             XLSX.writeFile(wb, `Taksi_Rapor_${sDate}_${eDate}.xlsx`);
         }
 
-        // --- EXPORT TO PDF ---
+        // --- EXPORT TO PDF (GÜNCELLENEN KISIM) ---
         function exportToPDF() {
-            // Find active tab inside reportContainer to print
             const element = document.getElementById('reportContainer');
+            
+            // 1. Tabloların scroll (kaydırma) barını kaldırıp yüksekliğini otomatik yapıyoruz ki, 
+            // 1 aylık uzun raporlarda sayfanın alt tarafı kesilip eksik çıkmasın.
+            const responsiveTables = element.querySelectorAll('.table-responsive');
+            responsiveTables.forEach(el => {
+                el.style.overflow = 'visible';
+                el.style.height = 'auto';
+            });
+            
+            // 2. Sil butonlarını PDF'te görünmemesi için gizle
+            const deleteBtns = document.querySelectorAll('.delete-btn');
+            deleteBtns.forEach(el => el.style.display = 'none');
+            
+            // 3. Normal A4 Dikey formata göre PDF ayarları
             const opt = {
-                margin:       5,
+                margin:       10, // 10mm (1cm) kenar boşluğu - İlk sayfanın boş çıkmasını önler
                 filename:     `Taksi_Rapor_${document.getElementById('repStartDate').value}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // Landscape for tables
+                html2canvas:  { scale: 2, windowWidth: 800 }, // windowWidth ile mobildeki dar görünüm yerine geniş (A4'e uygun) görünüm sağlanır
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' } // landscape (yatay) yerine portrait (dikey) kullanıldı
             };
             
-            // Hide delete buttons before PDF generation so they don't look messy
-            document.querySelectorAll('.delete-btn').forEach(el => el.style.display = 'none');
-            
             html2pdf().set(opt).from(element).save().then(() => {
-                // Restore delete buttons
-                document.querySelectorAll('.delete-btn').forEach(el => el.style.display = 'inline-block');
+                // 4. İşlem bitince her şeyi eski haline çevir (Mobil görünüme döner)
+                responsiveTables.forEach(el => {
+                    el.style.overflow = 'auto';
+                    el.style.height = '';
+                });
+                deleteBtns.forEach(el => el.style.display = 'inline-block');
             });
         }
-
     </script>
 </body>
 </html>
